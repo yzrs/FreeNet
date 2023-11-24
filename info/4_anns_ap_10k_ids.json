@@ -1,0 +1,1402 @@
+[
+    {
+        "val": 1.0,
+        "img_id": 37,
+        "anno_id": 21,
+        "category_id": 1,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 228,
+        "anno_id": 377,
+        "category_id": 1,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 208,
+        "anno_id": 328,
+        "category_id": 1,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 121,
+        "anno_id": 141,
+        "category_id": 1,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1041,
+        "anno_id": 664,
+        "category_id": 2,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1084,
+        "anno_id": 715,
+        "category_id": 2,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1037,
+        "anno_id": 650,
+        "category_id": 2,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1069,
+        "anno_id": 701,
+        "category_id": 2,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1202,
+        "anno_id": 930,
+        "category_id": 3,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 1491,
+        "anno_id": 1021,
+        "category_id": 3,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 1214,
+        "anno_id": 946,
+        "category_id": 3,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 1134,
+        "anno_id": 798,
+        "category_id": 3,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 2072,
+        "anno_id": 1269,
+        "category_id": 4,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 2160,
+        "anno_id": 1409,
+        "category_id": 4,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 2176,
+        "anno_id": 1434,
+        "category_id": 4,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 2173,
+        "anno_id": 1428,
+        "category_id": 4,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 2332,
+        "anno_id": 1648,
+        "category_id": 5,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 2754,
+        "anno_id": 1702,
+        "category_id": 5,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 2729,
+        "anno_id": 1699,
+        "category_id": 5,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 2344,
+        "anno_id": 1651,
+        "category_id": 5,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 7335,
+        "anno_id": 2139,
+        "category_id": 6,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 6880,
+        "anno_id": 2029,
+        "category_id": 6,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 7728,
+        "anno_id": 2265,
+        "category_id": 6,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 7003,
+        "anno_id": 2059,
+        "category_id": 6,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 10698,
+        "anno_id": 3102,
+        "category_id": 8,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 12573,
+        "anno_id": 3214,
+        "category_id": 8,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 18345,
+        "anno_id": 3663,
+        "category_id": 8,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 12507,
+        "anno_id": 3205,
+        "category_id": 8,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 17834,
+        "anno_id": 3528,
+        "category_id": 9,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 17750,
+        "anno_id": 3512,
+        "category_id": 9,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 17734,
+        "anno_id": 3492,
+        "category_id": 9,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 17790,
+        "anno_id": 3524,
+        "category_id": 9,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 19278,
+        "anno_id": 3867,
+        "category_id": 10,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 19308,
+        "anno_id": 3903,
+        "category_id": 10,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 19318,
+        "anno_id": 3920,
+        "category_id": 10,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 19831,
+        "anno_id": 4095,
+        "category_id": 10,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 20000,
+        "anno_id": 4280,
+        "category_id": 11,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 19864,
+        "anno_id": 4138,
+        "category_id": 11,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.5882352941176471,
+        "img_id": 19836,
+        "anno_id": 4104,
+        "category_id": 11,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.5882352941176471,
+        "img_id": 19838,
+        "anno_id": 4106,
+        "category_id": 11,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 20069,
+        "anno_id": 4354,
+        "category_id": 12,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294117,
+        "img_id": 20038,
+        "anno_id": 4322,
+        "category_id": 12,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.5882352941176471,
+        "img_id": 20059,
+        "anno_id": 4344,
+        "category_id": 12,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.5882352941176471,
+        "img_id": 20019,
+        "anno_id": 4303,
+        "category_id": 12,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 20089,
+        "anno_id": 4377,
+        "category_id": 13,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 20137,
+        "anno_id": 4432,
+        "category_id": 13,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 20158,
+        "anno_id": 4459,
+        "category_id": 13,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 20093,
+        "anno_id": 4382,
+        "category_id": 13,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 20291,
+        "anno_id": 4667,
+        "category_id": 14,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411764,
+        "img_id": 20250,
+        "anno_id": 4595,
+        "category_id": 14,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294117,
+        "img_id": 20280,
+        "anno_id": 4650,
+        "category_id": 14,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294117,
+        "img_id": 20305,
+        "anno_id": 4691,
+        "category_id": 14,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 20362,
+        "anno_id": 4768,
+        "category_id": 15,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 20544,
+        "anno_id": 5005,
+        "category_id": 15,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 20398,
+        "anno_id": 4811,
+        "category_id": 15,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529412,
+        "img_id": 20394,
+        "anno_id": 4807,
+        "category_id": 15,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 20610,
+        "anno_id": 5088,
+        "category_id": 16,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 20609,
+        "anno_id": 5087,
+        "category_id": 16,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 20602,
+        "anno_id": 5080,
+        "category_id": 16,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 20665,
+        "anno_id": 5144,
+        "category_id": 16,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 20876,
+        "anno_id": 5474,
+        "category_id": 17,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 20824,
+        "anno_id": 5379,
+        "category_id": 17,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 20851,
+        "anno_id": 5416,
+        "category_id": 17,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 20769,
+        "anno_id": 5306,
+        "category_id": 17,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 22057,
+        "anno_id": 5571,
+        "category_id": 18,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 22152,
+        "anno_id": 5638,
+        "category_id": 18,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 22046,
+        "anno_id": 5558,
+        "category_id": 18,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 22028,
+        "anno_id": 5535,
+        "category_id": 18,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 22748,
+        "anno_id": 5839,
+        "category_id": 19,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 22678,
+        "anno_id": 5768,
+        "category_id": 19,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 22676,
+        "anno_id": 5766,
+        "category_id": 19,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294117,
+        "img_id": 22677,
+        "anno_id": 5767,
+        "category_id": 19,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 23524,
+        "anno_id": 6104,
+        "category_id": 20,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 23609,
+        "anno_id": 6187,
+        "category_id": 20,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 23720,
+        "anno_id": 6270,
+        "category_id": 20,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529412,
+        "img_id": 23468,
+        "anno_id": 6032,
+        "category_id": 20,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 27494,
+        "anno_id": 7117,
+        "category_id": 21,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 27742,
+        "anno_id": 7124,
+        "category_id": 21,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 29227,
+        "anno_id": 7176,
+        "category_id": 21,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 29387,
+        "anno_id": 7195,
+        "category_id": 21,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 30974,
+        "anno_id": 7580,
+        "category_id": 22,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 31377,
+        "anno_id": 7724,
+        "category_id": 22,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 31310,
+        "anno_id": 7711,
+        "category_id": 22,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 31443,
+        "anno_id": 7734,
+        "category_id": 22,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 31966,
+        "anno_id": 8608,
+        "category_id": 23,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 32046,
+        "anno_id": 8693,
+        "category_id": 23,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 32063,
+        "anno_id": 8711,
+        "category_id": 23,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 32056,
+        "anno_id": 8703,
+        "category_id": 23,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 33006,
+        "anno_id": 8883,
+        "category_id": 24,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 40807,
+        "anno_id": 10375,
+        "category_id": 24,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 32518,
+        "anno_id": 8860,
+        "category_id": 24,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 32573,
+        "anno_id": 8862,
+        "category_id": 24,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 36420,
+        "anno_id": 9186,
+        "category_id": 25,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 36404,
+        "anno_id": 9170,
+        "category_id": 25,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 36358,
+        "anno_id": 9126,
+        "category_id": 25,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 36350,
+        "anno_id": 9118,
+        "category_id": 25,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 37670,
+        "anno_id": 9396,
+        "category_id": 26,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 37591,
+        "anno_id": 9329,
+        "category_id": 26,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 37677,
+        "anno_id": 9403,
+        "category_id": 26,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 37719,
+        "anno_id": 9437,
+        "category_id": 26,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 37867,
+        "anno_id": 9554,
+        "category_id": 27,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 37876,
+        "anno_id": 9563,
+        "category_id": 27,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 37872,
+        "anno_id": 9559,
+        "category_id": 27,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 37871,
+        "anno_id": 9558,
+        "category_id": 27,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 37948,
+        "anno_id": 9627,
+        "category_id": 28,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 38072,
+        "anno_id": 9718,
+        "category_id": 28,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 38541,
+        "anno_id": 9761,
+        "category_id": 28,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 38564,
+        "anno_id": 9763,
+        "category_id": 28,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 38751,
+        "anno_id": 9835,
+        "category_id": 29,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 38835,
+        "anno_id": 9942,
+        "category_id": 29,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 38845,
+        "anno_id": 9955,
+        "category_id": 29,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 38861,
+        "anno_id": 9973,
+        "category_id": 29,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 39919,
+        "anno_id": 10190,
+        "category_id": 30,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 39783,
+        "anno_id": 10085,
+        "category_id": 30,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 39857,
+        "anno_id": 10143,
+        "category_id": 30,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 39803,
+        "anno_id": 10098,
+        "category_id": 30,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 40902,
+        "anno_id": 10477,
+        "category_id": 31,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 40880,
+        "anno_id": 10454,
+        "category_id": 31,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 40915,
+        "anno_id": 10490,
+        "category_id": 31,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 40912,
+        "anno_id": 10487,
+        "category_id": 31,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 40946,
+        "anno_id": 10527,
+        "category_id": 32,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 41102,
+        "anno_id": 10678,
+        "category_id": 32,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 41054,
+        "anno_id": 10632,
+        "category_id": 32,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 40976,
+        "anno_id": 10556,
+        "category_id": 32,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 43091,
+        "anno_id": 10761,
+        "category_id": 33,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 43140,
+        "anno_id": 10843,
+        "category_id": 33,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 43164,
+        "anno_id": 10878,
+        "category_id": 33,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 43256,
+        "anno_id": 11011,
+        "category_id": 33,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 44252,
+        "anno_id": 11048,
+        "category_id": 34,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 44788,
+        "anno_id": 11344,
+        "category_id": 34,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 44364,
+        "anno_id": 11217,
+        "category_id": 34,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 44292,
+        "anno_id": 11101,
+        "category_id": 34,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 45031,
+        "anno_id": 11600,
+        "category_id": 35,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 44969,
+        "anno_id": 11525,
+        "category_id": 35,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529412,
+        "img_id": 44998,
+        "anno_id": 11560,
+        "category_id": 35,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529412,
+        "img_id": 45028,
+        "anno_id": 11596,
+        "category_id": 35,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 46109,
+        "anno_id": 11940,
+        "category_id": 36,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 46130,
+        "anno_id": 11965,
+        "category_id": 36,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411764,
+        "img_id": 46210,
+        "anno_id": 12064,
+        "category_id": 36,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 46183,
+        "anno_id": 12032,
+        "category_id": 36,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 47556,
+        "anno_id": 12266,
+        "category_id": 38,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 47510,
+        "anno_id": 12214,
+        "category_id": 38,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 47590,
+        "anno_id": 12305,
+        "category_id": 38,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 47491,
+        "anno_id": 12195,
+        "category_id": 38,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 48715,
+        "anno_id": 12582,
+        "category_id": 39,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 48560,
+        "anno_id": 12401,
+        "category_id": 39,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 48643,
+        "anno_id": 12492,
+        "category_id": 39,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 48582,
+        "anno_id": 12424,
+        "category_id": 39,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 48907,
+        "anno_id": 12798,
+        "category_id": 40,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 48733,
+        "anno_id": 12600,
+        "category_id": 40,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 48734,
+        "anno_id": 12601,
+        "category_id": 40,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411764,
+        "img_id": 48826,
+        "anno_id": 12709,
+        "category_id": 40,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 49002,
+        "anno_id": 12909,
+        "category_id": 41,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 48942,
+        "anno_id": 12837,
+        "category_id": 41,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 49099,
+        "anno_id": 13025,
+        "category_id": 41,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 49084,
+        "anno_id": 13006,
+        "category_id": 41,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 49308,
+        "anno_id": 13164,
+        "category_id": 42,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 49386,
+        "anno_id": 13257,
+        "category_id": 42,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 49328,
+        "anno_id": 13189,
+        "category_id": 42,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294117,
+        "img_id": 49283,
+        "anno_id": 13132,
+        "category_id": 42,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 1.0,
+        "img_id": 50076,
+        "anno_id": 13595,
+        "category_id": 43,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 50161,
+        "anno_id": 13686,
+        "category_id": 43,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 50061,
+        "anno_id": 13578,
+        "category_id": 43,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 50041,
+        "anno_id": 13556,
+        "category_id": 43,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 50384,
+        "anno_id": 13931,
+        "category_id": 44,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529412,
+        "img_id": 50390,
+        "anno_id": 13939,
+        "category_id": 44,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 50409,
+        "anno_id": 13959,
+        "category_id": 44,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 50249,
+        "anno_id": 13782,
+        "category_id": 44,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 50839,
+        "anno_id": 14100,
+        "category_id": 45,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 50954,
+        "anno_id": 14254,
+        "category_id": 45,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 50829,
+        "anno_id": 14089,
+        "category_id": 45,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 50772,
+        "anno_id": 14017,
+        "category_id": 45,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 51834,
+        "anno_id": 15007,
+        "category_id": 46,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 51811,
+        "anno_id": 14977,
+        "category_id": 46,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 51808,
+        "anno_id": 14972,
+        "category_id": 46,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 51813,
+        "anno_id": 14981,
+        "category_id": 46,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 52058,
+        "anno_id": 15207,
+        "category_id": 47,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 52146,
+        "anno_id": 15275,
+        "category_id": 47,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 52080,
+        "anno_id": 15227,
+        "category_id": 47,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 52051,
+        "anno_id": 15203,
+        "category_id": 47,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 54851,
+        "anno_id": 15352,
+        "category_id": 48,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 54944,
+        "anno_id": 15471,
+        "category_id": 48,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 54871,
+        "anno_id": 15384,
+        "category_id": 48,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 54988,
+        "anno_id": 15546,
+        "category_id": 48,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.9411764705882353,
+        "img_id": 55627,
+        "anno_id": 15604,
+        "category_id": 50,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 55663,
+        "anno_id": 15644,
+        "category_id": 50,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 55659,
+        "anno_id": 15640,
+        "category_id": 50,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 55625,
+        "anno_id": 15602,
+        "category_id": 50,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 55848,
+        "anno_id": 15845,
+        "category_id": 51,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7647058823529411,
+        "img_id": 55692,
+        "anno_id": 15671,
+        "category_id": 51,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 55802,
+        "anno_id": 15794,
+        "category_id": 51,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411765,
+        "img_id": 55840,
+        "anno_id": 15836,
+        "category_id": 51,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8823529411764706,
+        "img_id": 56700,
+        "anno_id": 16268,
+        "category_id": 52,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 56691,
+        "anno_id": 16251,
+        "category_id": 52,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 56660,
+        "anno_id": 16219,
+        "category_id": 52,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 56585,
+        "anno_id": 16137,
+        "category_id": 52,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 58615,
+        "anno_id": 16548,
+        "category_id": 53,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.8235294117647058,
+        "img_id": 58511,
+        "anno_id": 16431,
+        "category_id": 53,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.7058823529411764,
+        "img_id": 58537,
+        "anno_id": 16463,
+        "category_id": 53,
+        "dataset": "ap_10k"
+    },
+    {
+        "val": 0.6470588235294118,
+        "img_id": 58524,
+        "anno_id": 16446,
+        "category_id": 53,
+        "dataset": "ap_10k"
+    }
+]

@@ -1,0 +1,12 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+from .ap10k import AnimalAP10KDataset as ap10k
+from .ap10k_fewshot import AnimalAP10KDataset as ap10k_fewshot
+from .ap10k_mt_v3 import AnimalAP10KDataset as ap10k_mt_v3
+from .ap10k_category import AnimalAP10KDataset as ap10k_category
+from .ap10k_test_category import AnimalAP10KDataset as ap10k_test_category
+from .ap10k_animalpose import AP10KAnimalPoseDataset as ap10k_animalpose
+from .ap10k_animalpose_mt import AnimalAP10KMTDataset as ap10k_animalpose_mt
+from .ap10k_animalpose_fewshot import AP10KAnimalPoseDataset as ap10k_animalpose_fewshot

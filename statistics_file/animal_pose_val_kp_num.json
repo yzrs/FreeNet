@@ -1,0 +1,22 @@
+{
+    "left_eye": 450,
+    "right_eye": 465,
+    "nose": 534,
+    "left_ear": 485,
+    "right_ear": 496,
+    "left_shoulder": 318,
+    "right_shoulder": 324,
+    "left_hip": 198,
+    "right_hip": 221,
+    "left_elbow": 373,
+    "right_elbow": 387,
+    "left_knee": 259,
+    "right_knee": 252,
+    "L_F_Paw": 338,
+    "R_F_Paw": 333,
+    "L_B_Paw": 237,
+    "R_B_Paw": 237,
+    "throat": 461,
+    "wither": 407,
+    "tail": 279
+}

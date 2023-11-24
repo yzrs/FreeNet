@@ -1,0 +1,142 @@
+[
+    {
+        "val": 1.0,
+        "img_id": 3015,
+        "anno_id": 4255,
+        "category_id": 5,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1860,
+        "anno_id": 2689,
+        "category_id": 5,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1844,
+        "anno_id": 2664,
+        "category_id": 5,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1167,
+        "anno_id": 1653,
+        "category_id": 5,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1726,
+        "anno_id": 2490,
+        "category_id": 6,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 3260,
+        "anno_id": 4577,
+        "category_id": 6,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1042,
+        "anno_id": 1482,
+        "category_id": 6,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 2007,
+        "anno_id": 2910,
+        "category_id": 6,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 2172,
+        "anno_id": 3137,
+        "category_id": 8,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1897,
+        "anno_id": 2747,
+        "category_id": 8,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 4104,
+        "anno_id": 5613,
+        "category_id": 8,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 3489,
+        "anno_id": 4938,
+        "category_id": 8,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 4383,
+        "anno_id": 5892,
+        "category_id": 21,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 382,
+        "anno_id": 541,
+        "category_id": 21,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 4389,
+        "anno_id": 5898,
+        "category_id": 21,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 3568,
+        "anno_id": 5064,
+        "category_id": 21,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 1.0,
+        "img_id": 1388,
+        "anno_id": 1999,
+        "category_id": 24,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 0.95,
+        "img_id": 3788,
+        "anno_id": 5297,
+        "category_id": 24,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 0.95,
+        "img_id": 2635,
+        "anno_id": 3765,
+        "category_id": 24,
+        "dataset": "animal_pose"
+    },
+    {
+        "val": 0.95,
+        "img_id": 1034,
+        "anno_id": 1452,
+        "category_id": 24,
+        "dataset": "animal_pose"
+    }
+]
