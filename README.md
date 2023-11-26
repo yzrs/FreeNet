@@ -66,6 +66,11 @@ TigDog
   - ...
 
 #### Some Folders and Files Description
+**Label Files Renaming is Needed.**
+**For example, ap_10k_train.json / ap_10k_val.json / ap_10k_test.json**
+**For example, animal_pose_train.json / animal_pose_val.json**
+**For example, tigdog_train.json / tigdog_val.json**
+**For example, ap_10k_animal_pose_union_train.json / ap_10k_animal_pose_union_val.json**
 **Some default args params like steps are used for debug. Modify them for running.**
 - experiment 
   where we save the files during training

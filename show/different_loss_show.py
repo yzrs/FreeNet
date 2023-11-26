@@ -22,123 +22,8 @@ def set_seed(seed):
     torch.cuda.manual_seed_all(seed)
 
 
-def gt_show(dataset,num_joints):
-    keypoints_path = f"../info/{dataset}_keypoints_format.json"
-    with open(keypoints_path, "r") as f:
-        animal_kps_info = json.load(f)
-    fixed_size = (256,256)
-    heatmap_hw = (fixed_size[0] // 4, fixed_size[1] // 4)
-    kps_weights = np.array(animal_kps_info["kps_weights"],
-                           dtype=np.float32).reshape((num_joints,))
-
-    data_transform = {
-        "val": transforms.Compose([
-            transforms.AffineTransform(scale=None, rotation=None, fixed_size=fixed_size),
-            transforms.KeypointToHeatMap(heatmap_hw=heatmap_hw, gaussian_sigma=2, keypoints_weights=kps_weights),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    }
-
-    label_data_root = f"../../dataset/{dataset}"
-    train_dataset = CocoKeypoint(root=label_data_root, dataset=dataset,mode="train",transform=data_transform["val"],
-                                 fixed_size=fixed_size, data_type="keypoints")
-    train_dataset.animal_gt_show(animal_category=None,shuffle=True)
-
-
-def dt_show():
-    keypoints_path = f"../info/keypoints_definition.json"
-    with open(keypoints_path, "r") as f:
-        animal_kps_info = json.load(f)
-    fixed_size = (256,256)
-    heatmap_hw = (fixed_size[0] // 4, fixed_size[1] // 4)
-    kps_weights = np.array(animal_kps_info["kps_weights"],
-                           dtype=np.float32).reshape((26,))
-    data_transform = {
-        "val": transforms.Compose([
-            transforms.LabelFormatTrans(extend_flag=True),
-            transforms.AffineTransform(scale=None, rotation=None, fixed_size=fixed_size),
-            transforms.KeypointToHeatMap(heatmap_hw=heatmap_hw, gaussian_sigma=2, keypoints_weights=kps_weights),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    }
-
-    model_a = HighResolutionNet(num_joints=26)
-    model_b = HighResolutionNet(num_joints=26)
-    model_c = HighResolutionNet(num_joints=26)
-    model_d = HighResolutionNet(num_joints=26)
-    path_a = '../save_weights/mix_0.1_SL.pth'
-    path_b = '../save_weights/mix_0.1_ssl.pth'
-    path_c = '../save_weights/mix_0.1_self.pth'
-    path_d = '../save_weights/mix_0.1_uda.pth'
-    model_a.load_state_dict(torch.load(path_a, map_location='cpu')['model'])
-    model_b.load_state_dict(torch.load(path_b, map_location='cpu')['student_model'])
-    model_c.load_state_dict(torch.load(path_c, map_location='cpu')['student_model'])
-    model_d.load_state_dict(torch.load(path_d, map_location='cpu')['student_model'])
-    model_a.eval()
-    model_b.eval()
-    model_c.eval()
-    model_d.eval()
-
-    val_dataset_info = [{"dataset":"animal_pose","mode":"val"}]
-    val_dataset = MixKeypoint(root='../../dataset',merge_info=val_dataset_info,transform=data_transform['val'])
-    data_loader = DataLoader(val_dataset,
-                             batch_size=1,
-                             sampler=RandomSampler(val_dataset),
-                             pin_memory=True,
-                             num_workers=1,
-                             drop_last=False,
-                             collate_fn=val_dataset.collate_fn)
-    with amp.autocast(enabled=True):
-        with torch.no_grad():
-            for imgs,targets in data_loader:
-                logit_a = model_a(imgs)
-                logit_b = model_b(imgs)
-                logit_c = model_c(imgs)
-                logit_d = model_d(imgs)
-                # if neck keypoint is visible
-                coord_gt,_ = get_max_preds(targets[0]['heatmap'].unsqueeze(0))
-                coord_a, _ = get_max_preds(logit_a)
-                coord_b, _ = get_max_preds(logit_b)
-                coord_c, _ = get_max_preds(logit_c)
-                coord_d, _ = get_max_preds(logit_d)
-                coord_gt *= 4
-                coord_a *= 4
-                coord_b *= 4
-                coord_c *= 4
-                coord_d *= 4
-                mean = [0.485, 0.456, 0.406]
-                std = [0.229, 0.224, 0.225]
-
-                exclusive_kp_index_a = [8]
-                exclusive_kp_index_b = [2, 3, 6, 7]
-
-                coord_gt = coord_gt[:,exclusive_kp_index_b,:]
-                coord_a = coord_a[:,exclusive_kp_index_b,:]
-                coord_b = coord_b[:,exclusive_kp_index_b,:]
-                coord_c = coord_c[:,exclusive_kp_index_b,:]
-                coord_d = coord_d[:,exclusive_kp_index_b,:]
-
-                images_tensor = imgs * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1, 1)
-                images_np = images_tensor.numpy()
-                from matplotlib import pyplot as plt
-                plt.imshow(images_np[0].transpose(1, 2, 0))
-                plt.scatter(coord_gt[0,:,0], coord_gt[0,:,1], c='white', marker='o',label=f'GT ',s=60)
-                plt.scatter(coord_a[0,:,0], coord_a[0,:,1], c='black', marker='o',label=f'SL ',s=60)
-                plt.scatter(coord_b[0,:,0], coord_b[0,:,1], c='green', marker='o',label=f'SSL ',s=60)
-                plt.scatter(coord_c[0,:,0], coord_c[0,:,1], c='blue', marker='o',label=f'SSL+self ',s=60)
-                plt.scatter(coord_d[0,:,0], coord_d[0,:,1], c='red', marker='o',label=f'SSL+uda ',s=60)
-                plt.title('Animal Pose Exclusive Keypoints')
-                plt.legend()
-                plt.show()
-
-
 def different_loss_comparison():
-    random.seed(2)
-    np.random.seed(2)
-    torch.manual_seed(2)
-    torch.cuda.manual_seed_all(2)
+    set_seed(2)
     keypoints_path = f"../info/ap_10k_animal_pose_union_keypoints_format.json"
     with open(keypoints_path, "r") as f:
         animal_kps_info = json.load(f)
@@ -156,12 +41,12 @@ def different_loss_comparison():
         ])
     }
     data_root = "../../dataset"
-    dataset_info = [{"dataset":"ap_10k","mode":"train"},{"dataset":"animal_pose","mode":"train"}]
+    dataset_info = [{"dataset":"ap_10k","mode":"val"},{"dataset":"animal_pose","mode":"val"}]
     dataset = MixKeypoint(root=data_root, merge_info=dataset_info, transform=data_transform['val'],num_joints=21)
     # Ls / + Lu / +Lf
-    weights_path_a = "../pretrained_weights/ls.pth"
-    weights_path_b = "../pretrained_weights/ls_lu.pth"
-    weights_path_c = "../pretrained_weights/ls_lu_lf.pth"
+    weights_path_a = "../saved_weights/ls.pth"
+    weights_path_b = "../saved_weights/ls_lu.pth"
+    weights_path_c = "../saved_weights/ls_lu_lf.pth"
     model_a = HighResolutionNet(num_joints=21)
     model_b = HighResolutionNet(num_joints=21)
     model_c = HighResolutionNet(num_joints=21)
@@ -189,9 +74,6 @@ def different_loss_comparison():
     with torch.no_grad():
         for imgs,targets in data_loader:
             img_path = targets[0]['image_path']
-            base_name = os.path.basename(img_path).split(".")[0]
-            if base_name != "000000023468":
-                continue
             cur_img = mpimg.imread(img_path)
             imgs = imgs.to("cuda:0")
 
