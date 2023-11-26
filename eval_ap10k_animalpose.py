@@ -85,11 +85,16 @@ def main():
     if cfg.TEST.MODEL_FILE:
         logger.info('=> loading model from {}'.format(cfg.TEST.MODEL_FILE))
         checkpoint = torch.load(cfg.TEST.MODEL_FILE)
-        if cfg.MODEL.NAME == 'pose_hrnet':
-            # model.load_state_dict(checkpoint['state_dict'], strict=True)
+
+        load_flag = False
+        for key in ['teacher_model', 'student_model', 'state_dict', 'model', 'directly']:
+            if key in checkpoint:
+                model.load_state_dict(checkpoint[key], strict=True)
+                load_flag = True
+                break
+        if not load_flag:
             model.load_state_dict(checkpoint, strict=True)
-        else:
-            model.load_state_dict(checkpoint['state_dict'], strict=True)
+        logger.info("Loaded Key: {}".format(key))
     else:
         model_state_file = os.path.join(
             final_output_dir, 'final_state.pth'

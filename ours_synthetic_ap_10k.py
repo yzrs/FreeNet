@@ -13,7 +13,7 @@ from train_utils.utils import get_cosine_schedule_with_warmup
 from models.hrnet import HighResolutionNet
 from train_utils import transforms
 from train_utils.dataset import CocoKeypoint
-from train_utils.ssl_utils import ours
+from train_utils.ssl_utils import ours_ap10k
 from outer_tools.lib.config import cfg,update_config
 from outer_tools.lib.utils.utils import create_logger
 from torch.backends import cudnn as cudnn
@@ -163,8 +163,8 @@ def main(cfg,args):
         'valid_global_steps': 0,
     }
 
-    ours(cfg,args,train_label_loader,train_unlabel_loader,t_model, s_model,t_optimizer,s_optimizer,
-         t_scheduler, s_scheduler,t_scaler,s_scaler,writer_dict)
+    ours_ap10k(cfg,args,train_label_loader,train_unlabel_loader,t_model, s_model,t_optimizer,s_optimizer,
+               t_scheduler, s_scheduler,t_scaler,s_scaler,writer_dict)
 
     writer_dict['writer'].close()
 
