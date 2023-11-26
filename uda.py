@@ -13,7 +13,7 @@ from train_utils.utils import get_cosine_schedule_with_warmup
 from models.hrnet import HighResolutionNet
 from train_utils import transforms
 from train_utils.dataset import CocoKeypoint
-from train_utils.ssl_utils import setting_conditional_PL_conditional_feedback, uda
+from train_utils.ssl_utils import uda
 from outer_tools.lib.config import cfg,update_config
 from outer_tools.lib.utils.utils import create_logger
 from torch.backends import cudnn as cudnn
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--amp",default=True,action="store_true",  help="Use torch.cuda.amp for mixed precision training")
     # for ScarceNet Test
-    parser.add_argument('--cfg',default='./ScarceNet/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3.yaml',
+    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
 

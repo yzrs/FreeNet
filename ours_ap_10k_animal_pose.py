@@ -12,8 +12,8 @@ from torch.utils.data import DataLoader,SubsetRandomSampler
 from train_utils.utils import get_cosine_schedule_with_warmup
 from models.hrnet import HighResolutionNet
 from train_utils import transforms
-from train_utils.dataset import CocoKeypoint
-from train_utils.ssl_utils import mpl
+from train_utils.dataset import MixKeypoint
+from train_utils.ssl_utils import ours
 from outer_tools.lib.config import cfg,update_config
 from outer_tools.lib.utils.utils import create_logger
 from torch.backends import cudnn as cudnn
@@ -45,9 +45,11 @@ def main(cfg,args):
 
     data_transform = {
         "train": transforms.Compose([
+            transforms.LabelFormatTransAP10KAnimalPose(extend_flag=True),
             transforms.TransformMPL(args, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ]),
         "val": transforms.Compose([
+            transforms.LabelFormatTransAP10KAnimalPose(extend_flag=True),
             transforms.AffineTransform(scale=None, rotation=None, fixed_size=fixed_size),
             transforms.KeypointToHeatMap(heatmap_hw=heatmap_hw, gaussian_sigma=2, keypoints_weights=kps_weights),
             transforms.ToTensor(),
@@ -55,19 +57,15 @@ def main(cfg,args):
         ])
     }
 
+    train_dataset_info = [{"dataset":"ap_10k","mode":"train"},{"dataset":"animal_pose","mode":"train"}]
     data_root = args.data_root
-    train_label_dataset = CocoKeypoint(root=data_root, dataset="ap_10k",mode="train",transform=data_transform["train"],
-                                       fixed_size=args.fixed_size, data_type="keypoints")
-    train_unlabel_dataset = CocoKeypoint(root=data_root, dataset="ap_10k",mode="train",transform=data_transform["train"],
-                                         fixed_size=args.fixed_size, data_type="keypoints")
 
-    label_img_id_path = "info/label_list/annotation_list_25.json"
-    with open(label_img_id_path,'r') as f:
-        img_ids = json.load(f)
+    train_label_dataset = MixKeypoint(root=data_root,merge_info=train_dataset_info,transform=data_transform['train'],num_joints=21)
+    train_unlabel_dataset = MixKeypoint(root=data_root,merge_info=train_dataset_info,transform=data_transform['train'],num_joints=21)
 
-    train_label_dataset.valid_list = [ann for ann in train_label_dataset.valid_list if ann['image_id'] in img_ids]
-
-    train_label_dataset.load_missing_anns(args.anns_info_path)
+    train_label_dataset.get_kps_num(args)
+    train_label_dataset.sample_few(num_ratio=0.1)
+    train_unlabel_dataset.eliminate_repeated_data(train_label_dataset.valid_lists)
     train_label_dataset.get_kps_num(args)
     train_unlabel_dataset.get_kps_num(args)
 
@@ -139,7 +137,7 @@ def main(cfg,args):
 
     if args.resume:
         if os.path.isfile(args.resume):
-            logger.info("=> loading checkpoint {}".format(args.resume))
+            print(f"=> loading checkpoint '{args.resume}'")
             checkpoint = torch.load(args.resume, map_location='cpu')
             args.start_step = checkpoint['step'] + 1
             t_model.module.load_state_dict(checkpoint['teacher_model'])
@@ -152,21 +150,22 @@ def main(cfg,args):
                 # lr_scheduler.last_epoch = checkpoint['epoch']
                 t_scaler.load_state_dict(checkpoint['teacher_scaler'])
                 s_scaler.load_state_dict(checkpoint['student_scaler'])
-            logger.info("=> loaded checkpoint {} (epoch {})".format(args.resume,checkpoint['step']))
+            print(f"=> loaded checkpoint '{args.resume}' (epoch {checkpoint['step']})")
         else:
-            logger.info("=> no checkpoint found at {}".format(args.resume))
+            print(f"=> no checkpoint found at '{args.resume}'")
 
     writer_dir = os.path.join(args.output_dir,"summary")
     if not os.path.exists(writer_dir):
         os.mkdir(writer_dir)
+
     writer_dict = {
         'writer': SummaryWriter(log_dir=writer_dir),
         'train_global_steps': 0,
         'valid_global_steps': 0,
     }
 
-    mpl(cfg,args,train_label_loader,train_unlabel_loader,t_model, s_model,t_optimizer,s_optimizer,t_scheduler,
-        s_scheduler,t_scaler,s_scaler,writer_dict)
+    ours(cfg,args,train_label_loader,train_unlabel_loader,t_model, s_model,t_optimizer,s_optimizer,
+         t_scheduler, s_scheduler,t_scaler,s_scaler,writer_dict)
 
     writer_dict['writer'].close()
 
@@ -188,25 +187,29 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(
         description=__doc__)
-    parser.add_argument('--name', default="mpl", type=str, help='experiment name')
+    parser.add_argument('--name', default='ours', type=str, help='experiment name')
     parser.add_argument('--info', default="", type=str, help='experiment info')
     parser.add_argument('--gpus', default=[0,1], help='device')
-    parser.add_argument('--data-root', default='../dataset/ap_10k', type=str, help='data path')
+    parser.add_argument('--data-root', default='../dataset', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default='25_5_imgs_SL_hrnet_pretrained.pth',
+    parser.add_argument('--pretrained-weights-name', default='ap_10k_animal_pose_mix_SL_0.1_hrnet.pth',
                         type=str, help='pretrained weights name')
-
-    parser.add_argument('--anns-info-path', default='info/25_5_imgs_keypoints_anns_info.json',
-                        type=str, help='missing anns info path')
     parser.add_argument('--output-dir', default='./experiment',type=str, help='output dir depends on the time')
-    parser.add_argument('--resume', default="save_weights/checkpoint.pth", type=str, help='path to resume file')
+    parser.add_argument('--resume', default=None, type=str, help='path to resume file')
 
-    parser.add_argument('--total-steps', default=90000, type=int, help='number of total steps to run')
-    parser.add_argument('--eval-step', default=300, type=int, help='number of eval steps to run')
+    parser.add_argument('--total-steps', default=120000, type=int, help='number of total steps to run')
+    parser.add_argument('--eval-step', default=5, type=int, help='number of eval steps to run')
     parser.add_argument('--start-step', default=0, type=int,help='manual epoch number (useful on restarts)')
     parser.add_argument('--warmup-steps', default=900, type=int, help='warmup steps')
     parser.add_argument('--student-wait-steps', default=0, type=int, help='warmup steps')
+
+    parser.add_argument('--uda-steps', default=60000, type=int, help='warmup steps of lambda-u')
+    parser.add_argument('--down-step', default=9000,type=int,help='warmup steps of conditional PL')
+
+    parser.add_argument('--feedback-steps-start', default=3000, type=float, help='start steps of feedback')
+    parser.add_argument('--feedback-steps-complete', default=6000, type=float, help='warmup steps of feedback')
+    parser.add_argument('--feedback-weight', default=2, type=float, help='feedback scalar')
 
     # 学习率
     parser.add_argument('--teacher_lr', default=1e-5, type=float,help='initial learning rate, 1e-5 is the default value for training')
@@ -219,14 +222,14 @@ if __name__ == "__main__":
     #
     parser.add_argument('--workers', default=8, type=int, help='number of workers for DataLoader')
     parser.add_argument('--batch-size', default=4, type=int, help='batch size of label data')
-    parser.add_argument('--mu', default=7, type=int, help='batch size factor of unlabel data ')
+    parser.add_argument('--mu', default=3, type=int, help='batch size factor of unlabel data ')
     parser.add_argument('--seed', default=2, type=int, help='seed for initializing training')
     # animal body关键点信息
-    parser.add_argument('--keypoints-path', default="./info/ap_10k_keypoints_format.json", type=str,
+    parser.add_argument('--keypoints-path', default="./info/ap_10k_animal_pose_union_keypoints_format.json", type=str,
                         help='keypoints_format.json path')
     parser.add_argument('--fixed-size', default=[256, 256], nargs='+', type=int, help='input size')
     # keypoints点数
-    parser.add_argument('--num-joints', default=17, type=int, help='num_joints')
+    parser.add_argument('--num-joints', default=21, type=int, help='num_joints')
     # best info
     parser.add_argument('--best-oks', default=0, type=float,help='best OKS performance during training')
     parser.add_argument('--best-oks-epoch', default=0, type=int,help='best OKS performance Epoch during training')
@@ -235,7 +238,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--amp",default=True,action="store_true",  help="Use torch.cuda.amp for mixed precision training")
     # for ScarceNet Test
-    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
+    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k_animalpose.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
 

@@ -186,7 +186,7 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(
         description=__doc__)
-    parser.add_argument('--name', default="ours", type=str, help='experiment name')
+    parser.add_argument('--name', default="ours_for_25_5_imgs_settings", type=str, help='experiment name')
     parser.add_argument('--info', default="", type=str, help='experiment info')
     parser.add_argument('--gpus', default=[0,1], help='device')
     parser.add_argument('--data-root', default='../dataset/ap_10k', type=str, help='data path')
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--amp",default=True,action="store_true",
                         help="Use torch.cuda.amp for mixed precision training")
     # for ScarceNet Test
-    parser.add_argument('--cfg',default='./ScarceNet/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3.yaml',
+    parser.add_argument('--cfg',default='./outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
 

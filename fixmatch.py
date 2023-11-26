@@ -212,7 +212,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--amp",default=True,action="store_true",  help="Use torch.cuda.amp for mixed precision training")
     # for ScarceNet Test
-    parser.add_argument('--cfg',default='./ScarceNet/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3.yaml',
+    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
 

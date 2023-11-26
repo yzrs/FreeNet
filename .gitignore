@@ -1,5 +1,4 @@
 experiment/
 pretrained_weights/
-save_weights/
-
 /.idea/
+/saved_weights/

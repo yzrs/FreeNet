@@ -13,7 +13,7 @@ from train_utils.utils import get_cosine_schedule_with_warmup
 from models.hrnet import HighResolutionNet
 from train_utils import transforms
 from train_utils.dataset import CocoKeypoint
-from train_utils.ssl_utils import sl_finetune
+from train_utils.ssl_utils import ours
 from outer_tools.lib.config import cfg,update_config
 from outer_tools.lib.utils.utils import create_logger
 from torch.backends import cudnn as cudnn
@@ -61,11 +61,6 @@ def main(cfg,args):
     train_unlabel_dataset = CocoKeypoint(root=data_root, dataset="ap_10k",mode="train",transform=data_transform["train"],
                                          fixed_size=args.fixed_size, data_type="keypoints")
 
-    label_img_id_path = "info/label_list/annotation_list_25.json"
-    with open(label_img_id_path, 'r') as f:
-        img_ids = json.load(f)
-
-    train_label_dataset.valid_list = [ann for ann in train_label_dataset.valid_list if ann['image_id'] in img_ids]
     train_label_dataset.load_missing_anns(args.anns_info_path)
     train_label_dataset.get_kps_num(args)
     train_unlabel_dataset.get_kps_num(args)
@@ -163,8 +158,8 @@ def main(cfg,args):
         'valid_global_steps': 0,
     }
 
-    sl_finetune(cfg,args,train_label_loader,train_unlabel_loader,t_model, s_model,t_optimizer,s_optimizer,t_scheduler,
-                s_scheduler,t_scaler,s_scaler,writer_dict)
+    ours(cfg,args,train_label_loader,train_unlabel_loader,t_model, s_model,t_optimizer,s_optimizer,
+         t_scheduler, s_scheduler,t_scaler,s_scaler,writer_dict)
 
     writer_dict['writer'].close()
 
@@ -186,17 +181,17 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
     parser = argparse.ArgumentParser(
         description=__doc__)
+    parser.add_argument('--level',required=True,type=int, help='level value for ap-10k to 2 split datasets'
+                                                               '0->share eyes,nose,neck,tail,1-> share 0+paws,2-> share 1+hips')
     parser.add_argument('--name', default="ours", type=str, help='experiment name')
     parser.add_argument('--info', default="", type=str, help='experiment info')
     parser.add_argument('--gpus', default=[0,1], help='device')
     parser.add_argument('--data-root', default='../dataset/ap_10k', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default='scarcenet.pth',
+    parser.add_argument('--pretrained-weights-name', default=None,
                         type=str, help='pretrained weights name')
-
-    parser.add_argument('--anns-info-path', default='info/25_5_imgs_keypoints_anns_info.json',
-                        type=str, help='missing anns info path')
+    parser.add_argument('--anns-info-path', default=None,type=str, help='anns info path to split ap-10k')
     parser.add_argument('--output-dir', default='./experiment',type=str, help='output dir depends on the time')
     parser.add_argument('--resume', default=None, type=str, help='path to resume file')
 
@@ -214,8 +209,10 @@ if __name__ == "__main__":
     parser.add_argument('--feedback-weight', default=2, type=float, help='feedback scalar')
 
     # 学习率
-    parser.add_argument('--teacher_lr', default=1e-5, type=float,help='initial learning rate, 1e-5 is the default value for training')
-    parser.add_argument('--student_lr', default=1e-3, type=float,help='initial learning rate, 1e-3 is the default value for training')
+    parser.add_argument('--teacher_lr', default=1e-5, type=float,
+                        help='initial learning rate, 1e-5 is the default value for training')
+    parser.add_argument('--student_lr', default=1e-3, type=float,
+                        help='initial learning rate, 1e-3 is the default value for training')
 
     # AdamW的weight_decay参数
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,metavar='W',
@@ -238,9 +235,10 @@ if __name__ == "__main__":
     parser.add_argument('--best-pck', default=0, type=float,help='best PCK performance during training')
     parser.add_argument('--best-pck-epoch', default=0, type=int,help='best PCK performance Epoch during training')
 
-    parser.add_argument("--amp",default=True,action="store_true",  help="Use torch.cuda.amp for mixed precision training")
+    parser.add_argument("--amp",default=True,action="store_true",
+                        help="Use torch.cuda.amp for mixed precision training")
     # for ScarceNet Test
-    parser.add_argument('--cfg',default='./ScarceNet/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3.yaml',
+    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
 
@@ -277,5 +275,8 @@ if __name__ == "__main__":
     cudnn.benchmark = cfg.CUDNN.BENCHMARK
     torch.backends.cudnn.deterministic = cfg.CUDNN.DETERMINISTIC
     torch.backends.cudnn.enabled = cfg.CUDNN.ENABLED
+
+    args.pretrained_weights_name = "ap_10k_split_level_{}.pth".format(args.level)
+    args.anns_info_path = "info/missing_keypoints_anns_info_level_{}.json".format(args.level)
 
     main(cfg,args)

@@ -231,8 +231,8 @@ def ours(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_mod
             pbar.close()
             teacher_model.eval()
             student_model.eval()
-            ap10k_eval_model_parallel(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
-                                      t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
+            ap10k_animalpose_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+                                        t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
             teacher_model.train()
             student_model.train()
 
@@ -448,7 +448,7 @@ def finetune(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student
             pbar.close()
             teacher_model.eval()
             student_model.eval()
-            ap10k_eval_model_parallel(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+            ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
                                       t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
             teacher_model.train()
             student_model.train()
@@ -632,7 +632,7 @@ def sl_finetune(cfg, args, labeled_loader, unlabeled_loader, teacher_model, stud
             pbar.close()
             teacher_model.eval()
             student_model.eval()
-            ap10k_eval_model_parallel(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+            ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
                                       t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
             teacher_model.train()
             student_model.train()
@@ -798,7 +798,7 @@ def uda(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_mode
             pbar.close()
             teacher_model.eval()
             student_model.eval()
-            ap10k_eval_model_parallel(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+            ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
                                       t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
             teacher_model.train()
             student_model.train()
@@ -967,7 +967,7 @@ def mpl(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_mode
             pbar.close()
             teacher_model.eval()
             student_model.eval()
-            ap10k_eval_model_parallel(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+            ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
                                       t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
             teacher_model.train()
             student_model.train()
@@ -1100,261 +1100,6 @@ def fixmatch(cfg, args, labeled_loader, unlabeled_loader, model, optimizer, sche
             model.train()
 
 
-def iter_eval_model_parallel(args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,
-                             s_scheduler, t_scaler, s_scaler, val_dataset, s_losses, t_losses):
-    """
-        For multi GPUs
-        This function directly use teacher model and student model themselves to validate
-        :param args: ...
-        :param step: current training step -> epoch
-        :param teacher_model: teacher model on multiGPUs
-        :param student_model: student model on multiGPUs
-        :param t_optimizer: used to save info
-        :param s_optimizer: used to save info
-        :param t_scheduler: used to save info
-        :param s_scheduler: used to save info
-        :param t_scaler: used to save info
-        :param s_scaler: used to save info
-        :param val_dataset: validating dataset.Here is AP-10K Val + Animal Pose Val
-        :param s_losses: saved in val_log
-        :param t_losses: saved in val_log
-        :return: None
-    """
-    epoch = step // args.eval_step
-    save_files = {
-        'teacher_model': teacher_model.module.state_dict() if hasattr(teacher_model,
-                                                                      'module') else teacher_model.state_dict(),
-        'student_model': student_model.module.state_dict() if hasattr(student_model,
-                                                                      'module') else student_model.state_dict(),
-        'teacher_optimizer': t_optimizer.state_dict(),
-        'student_optimizer': s_optimizer.state_dict(),
-        'teacher_scheduler': t_scheduler.state_dict(),
-        'student_scheduler': s_scheduler.state_dict(),
-        'step': step,
-        'epoch': epoch}
-    if args.amp:
-        save_files["teacher_scaler"] = t_scaler.state_dict()
-        save_files["student_scaler"] = s_scaler.state_dict()
-    torch.save(save_files, "{}/save_weights/model-{}.pth".format(args.output_dir, epoch))
-    # evaluate on the test dataset
-    model_name = f"model-{epoch}"
-    # evaluate on the test dataset
-    # 针对mix数据集的eval_func
-    stu_val_oks_value, stu_val_pck_value, stu_oks_list, stu_pck_list = eval_model_parallel(args, student_model,
-                                                                                           model_name, val_dataset,
-                                                                                           "student_model")
-    if stu_val_oks_value > args.best_oks:
-        args.best_oks = stu_val_oks_value
-        torch.save(save_files['student_model'], "{}/best-oks.pth".format(args.output_dir))
-    if stu_val_pck_value > args.best_pck:
-        args.best_pck = stu_val_pck_value
-        torch.save(save_files['student_model'], "{}/best-pck.pth".format(args.output_dir))
-
-    tea_val_oks_value, tea_val_pck_value, _, _ = eval_model_parallel(args, teacher_model, model_name, val_dataset,
-                                                                     "teacher_model")
-    stu_oks_dict = {key['dataset'] + '_' + key['mode']: val for key, val in
-                    zip(val_dataset.dataset_infos, stu_oks_list)}
-    stu_pck_dict = {key['dataset'] + '_' + key['mode']: val for key, val in
-                    zip(val_dataset.dataset_infos, stu_pck_list)}
-
-    # 计算在shared keypoints 和 exclusive keypoint上的PCK
-    # 这里是AP-10K 和 Animal Pose
-    # shared keypoints: [0,1,4,11,12,13,14,15,16,17,18,21,22,23,24,25]
-    # exclusive keypoints:[[8],[2,3,6,7]]
-
-    print("group pck evaluating")
-    shared_kp_index = [0, 1, 4, 11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25]
-    exclusive_kp_index_a = [8]
-    exclusive_kp_index_b = [2, 3, 6, 7]
-    avg_shared_kps_pck, _ = eval_group_pck(args, model_name, val_dataset, shared_kp_index, [0, 1], key="student_model")
-    ap_10k_exclusive_kps_pck, _ = eval_group_pck(args, model_name, val_dataset, exclusive_kp_index_a, [0],
-                                                 key="student_model")
-    animal_pose_exclusive_kps_pck, _ = eval_group_pck(args, model_name, val_dataset, exclusive_kp_index_b, [1],
-                                                      key="student_model")
-    print("group pck evaluated", avg_shared_kps_pck, ap_10k_exclusive_kps_pck, animal_pose_exclusive_kps_pck)
-
-    # write into txt
-    val_path = os.path.join(args.output_dir, "info/val_log.txt")
-    with open(val_path, "a") as f:
-        # 写入的数据包括coco指标还有loss和learning rate
-        result_info = [
-            f"student_mean_oks:{stu_val_oks_value:.6f}",
-            f"student_mean_pck:{stu_val_pck_value:.6f}",
-            f"teacher_mean_oks:{tea_val_oks_value:.6f}",
-            f"teacher_mean_pck:{tea_val_pck_value:.6f}",
-            f"S_Loss: {s_losses.avg:.4f}",
-            f"T_Loss: {t_losses.avg:.4f}",
-            f"Stu PCK on shared kps:{avg_shared_kps_pck:.4f}",
-            f"Stu PCK on exclusive kps a:{ap_10k_exclusive_kps_pck:.4f}",
-            f"Stu PCK on exclusive kps b:{animal_pose_exclusive_kps_pck:.4f}",
-            f"stu_oks_dict: {' '.join([f'{k}: {v:.6f}' for k, v in stu_oks_dict.items()])}",
-            f"stu_pck_dict: {' '.join([f'{k}: {v:.6f}' for k, v in stu_pck_dict.items()])}"
-        ]
-
-        txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
-        f.write(txt + "\n")
-
-
-def iter_eval_model_parallel_mix_21(args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,
-                                    s_scheduler, t_scaler, s_scaler, val_dataset, s_losses, t_losses):
-    """
-        For multi GPUs
-        This function directly use teacher model and student model themselves to validate
-        :param args: ...
-        :param step: current training step -> epoch
-        :param teacher_model: teacher model on multiGPUs
-        :param student_model: student model on multiGPUs
-        :param t_optimizer: used to save info
-        :param s_optimizer: used to save info
-        :param t_scheduler: used to save info
-        :param s_scheduler: used to save info
-        :param t_scaler: used to save info
-        :param s_scaler: used to save info
-        :param val_dataset: validating dataset.Here is AP-10K Val + Animal Pose Val
-        :param s_losses: saved in val_log
-        :param t_losses: saved in val_log
-        :return: None
-    """
-    epoch = step // args.eval_step
-    save_files = {
-        'teacher_model': teacher_model.module.state_dict() if hasattr(teacher_model,
-                                                                      'module') else teacher_model.state_dict(),
-        'student_model': student_model.module.state_dict() if hasattr(student_model,
-                                                                      'module') else student_model.state_dict(),
-        'teacher_optimizer': t_optimizer.state_dict(),
-        'student_optimizer': s_optimizer.state_dict(),
-        'teacher_scheduler': t_scheduler.state_dict(),
-        'student_scheduler': s_scheduler.state_dict(),
-        'step': step,
-        'epoch': epoch}
-    if args.amp:
-        save_files["teacher_scaler"] = t_scaler.state_dict()
-        save_files["student_scaler"] = s_scaler.state_dict()
-    torch.save(save_files, "{}/save_weights/model-{}.pth".format(args.output_dir, epoch))
-    # evaluate on the test dataset
-    model_name = f"model-{epoch}"
-    # evaluate on the test dataset
-    # 针对mix数据集的eval_func
-    stu_val_oks_value, stu_val_pck_value, stu_oks_list, stu_pck_list = eval_model_parallel(args, student_model,
-                                                                                           model_name, val_dataset,
-                                                                                           "student_model")
-    if stu_val_oks_value > args.best_oks:
-        args.best_oks = stu_val_oks_value
-        torch.save(save_files['student_model'], "{}/best-oks.pth".format(args.output_dir))
-    if stu_val_pck_value > args.best_pck:
-        args.best_pck = stu_val_pck_value
-        torch.save(save_files['student_model'], "{}/best-pck.pth".format(args.output_dir))
-
-    tea_val_oks_value, tea_val_pck_value, _, _ = eval_model_parallel(args, teacher_model, model_name, val_dataset,
-                                                                     "teacher_model")
-    stu_oks_dict = {key['dataset'] + '_' + key['mode']: val for key, val in
-                    zip(val_dataset.dataset_infos, stu_oks_list)}
-    stu_pck_dict = {key['dataset'] + '_' + key['mode']: val for key, val in
-                    zip(val_dataset.dataset_infos, stu_pck_list)}
-
-    # write into txt
-    val_path = os.path.join(args.output_dir, "info/val_log.txt")
-    with open(val_path, "a") as f:
-        # 写入的数据包括coco指标还有loss和learning rate
-        result_info = [
-            f"student_mean_oks:{stu_val_oks_value:.6f}",
-            f"student_mean_pck:{stu_val_pck_value:.6f}",
-            f"teacher_mean_oks:{tea_val_oks_value:.6f}",
-            f"teacher_mean_pck:{tea_val_pck_value:.6f}",
-            f"S_Loss: {s_losses.avg:.4f}",
-            f"T_Loss: {t_losses.avg:.4f}",
-            f"stu_oks_dict: {' '.join([f'{k}: {v:.6f}' for k, v in stu_oks_dict.items()])}",
-            f"stu_pck_dict: {' '.join([f'{k}: {v:.6f}' for k, v in stu_pck_dict.items()])}"
-        ]
-        txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
-        f.write(txt + "\n")
-
-
-def iter_eval_model_parallel_mix(args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,
-                                 s_scheduler, t_scaler, s_scaler, val_dataset, s_losses, t_losses, writer_dict):
-    """
-        For multi GPUs
-        This function directly use teacher model and student model themselves to validate
-        :param writer_dict: Summary Writer of TensorboardX
-        :param args: ...
-        :param step: current training step -> epoch
-        :param teacher_model: teacher model on multiGPUs
-        :param student_model: student model on multiGPUs
-        :param t_optimizer: used to save info
-        :param s_optimizer: used to save info
-        :param t_scheduler: used to save info
-        :param s_scheduler: used to save info
-        :param t_scaler: used to save info
-        :param s_scaler: used to save info
-        :param val_dataset: validating dataset.Here is AP-10K Val + Animal Pose Val
-        :param s_losses: saved in val_log
-        :param t_losses: saved in val_log
-        :return: None
-    """
-    epoch = step // args.eval_step
-    save_files = {
-        'teacher_model': teacher_model.module.state_dict() if hasattr(teacher_model,
-                                                                      'module') else teacher_model.state_dict(),
-        'student_model': student_model.module.state_dict() if hasattr(student_model,
-                                                                      'module') else student_model.state_dict(),
-        'teacher_optimizer': t_optimizer.state_dict(),
-        'student_optimizer': s_optimizer.state_dict(),
-        'teacher_scheduler': t_scheduler.state_dict(),
-        'student_scheduler': s_scheduler.state_dict(),
-        'step': step,
-        'epoch': epoch}
-    if args.amp:
-        save_files["teacher_scaler"] = t_scaler.state_dict()
-        save_files["student_scaler"] = s_scaler.state_dict()
-    torch.save(save_files, "{}/save_weights/model-{}.pth".format(args.output_dir, epoch))
-    # evaluate on the test dataset
-    model_name = f"model-{epoch}"
-    # evaluate on the test dataset
-    # 针对mix数据集的eval_func
-    stu_val_oks_value, stu_val_pck_value, stu_oks_list, stu_pck_list = eval_model_parallel(args, student_model,
-                                                                                           model_name, val_dataset,
-                                                                                           "student_model")
-    if stu_val_oks_value > args.best_oks:
-        args.best_oks = stu_val_oks_value
-        torch.save(save_files['student_model'], "{}/best-oks.pth".format(args.output_dir))
-    if stu_val_pck_value > args.best_pck:
-        args.best_pck = stu_val_pck_value
-        torch.save(save_files['student_model'], "{}/best-pck.pth".format(args.output_dir))
-
-    tea_val_oks_value, tea_val_pck_value, _, _ = eval_model_parallel(args, teacher_model, model_name, val_dataset,
-                                                                     "teacher_model")
-    stu_oks_dict = {key['dataset'] + '_' + key['mode']: val for key, val in
-                    zip(val_dataset.dataset_infos, stu_oks_list)}
-    stu_oks_dict['Average_OKS'] = stu_val_oks_value
-    stu_pck_dict = {key['dataset'] + '_' + key['mode']: val for key, val in
-                    zip(val_dataset.dataset_infos, stu_pck_list)}
-    stu_pck_dict['Average_PCK'] = stu_val_pck_value
-
-    oks_dict = {'Stu_OKS': stu_val_oks_value, 'Tea_OKS': tea_val_oks_value}
-    pck_dict = {'Stu_PCK': stu_val_pck_value, 'Tea_PCK': tea_val_pck_value}
-
-    writer = writer_dict['writer']
-    global_steps = writer_dict['valid_global_steps']
-    writer.add_scalars('Val_OKS', oks_dict, global_steps)
-    writer.add_scalars('Val_PCK', pck_dict, global_steps)
-    writer.add_scalars('Stu_OKS_Dataset', stu_oks_dict, global_steps)
-    writer.add_scalars('Stu_PCK_Dataset', stu_pck_dict, global_steps)
-    writer_dict['valid_global_steps'] = global_steps + 1
-
-    # write into txt
-    val_path = os.path.join(args.output_dir, "info/val_log.txt")
-    with open(val_path, "a") as f:
-        # 写入的数据包括coco指标还有loss和learning rate
-        result_info = [
-            f"student_mean_oks:{stu_val_oks_value:.6f}",
-            f"student_mean_pck:{stu_val_pck_value:.6f}",
-            f"teacher_mean_oks:{tea_val_oks_value:.6f}",
-            f"teacher_mean_pck:{tea_val_pck_value:.6f}"
-        ]
-        txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
-        f.write(txt + "\n")
-
-
 def eval_from_scarcenet(cfg,model,output_dir):
     # for mix dataset
     # define loss function (criterion) and optimizer
@@ -1405,7 +1150,7 @@ def eval_ap10k(cfg,model,output_dir):
     return oks_val, pck_val
 
 
-def iter_eval_model_parallel_mix_v2(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,
+def ap10k_animalpose_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,
                                     s_scheduler, t_scaler, s_scaler, writer_dict):
     """
         For multi GPUs
@@ -1532,8 +1277,8 @@ def ap10k_eval_model_single(cfg, args, step, model, optimizer, scheduler, scaler
         logger.info(txt)
 
 
-def ap10k_eval_model_parallel(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,
-                              s_scheduler, t_scaler, s_scaler, writer_dict):
+def ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer, t_scheduler,s_scheduler,
+                     t_scaler, s_scaler, writer_dict):
     """
         For multi GPUs
         This function directly use teacher model and student model themselves to validate
