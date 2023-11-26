@@ -1,18 +1,14 @@
 import os.path
 import random
 import json
-
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 import torch
-from torch.cuda import amp
 from torch.utils.data import DataLoader, RandomSampler
-
 from train_utils import transforms
 from train_utils.dataset import CocoKeypoint, MixKeypoint
 from models.hrnet import HighResolutionNet
-from train_utils.transforms import get_max_preds
 
 
 def set_seed(seed):
