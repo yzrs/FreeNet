@@ -109,3 +109,46 @@ TigDog
   - ls / ls_lu / ls_lu_lf : Training Results for AP-10K + Animal Pose 10%
   - ours_level_0/1/2 : Ours Results for different levels of splitting ap_10k 
 
+#### sh
+total-steps could be modified appropriately.
+
+python ours_ap_10k_animal_pose.py \
+    --workers 8 \
+    --seed 2 \
+    --batch-size 8 \
+    --mu 7 \
+    --total-steps 45000 \
+    --eval-step 150 \
+    --warmup-steps 900 \
+    --down-step 9000 \
+    --feedback-steps-start 4500 \
+    --feedback-steps-complete 6000 \
+    --amp
+
+python ours_synthetic_ap_10k.py \
+    --workers 8 \
+    --seed 2 \
+    --batch-size 8 \
+    --mu 7 \
+    --total-steps 45000 \
+    --eval-step 150 \
+    --warmup-steps 900 \
+    --down-step 9000 \
+    --feedback-steps-start 4500 \
+    --feedback-steps-complete 6000 \
+    --amp
+
+level -> 0 / 1 / 2
+python ours_split_ap_10k.py \
+    --level 0 \ 
+    --workers 8 \
+    --seed 2 \
+    --batch-size 32 \
+    --mu 1 \
+    --total-steps 45000 \
+    --eval-step 150 \
+    --warmup-steps 900 \
+    --down-step 9000 \
+    --feedback-steps-start 4500 \
+    --feedback-steps-complete 6000 \
+    --amp
