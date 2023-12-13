@@ -85,7 +85,9 @@ class CocoKeypoint(data.Dataset):
                         visible = keypoints[:, 2]
                         keypoints = keypoints[:, :2]
                         info["keypoints"] = keypoints
+                        info["keypoints_ori"] = np.copy(keypoints)
                         info["visible"] = visible
+                        info["visible_ori"] = np.copy(visible)
                         info['obj_index'] = len(self.imgs_with_keypoints)
                         info['mode'] = "label"
                         self.imgs_with_keypoints.append(info)
