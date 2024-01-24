@@ -105,13 +105,7 @@ def main(cfg,args):
                                     num_workers=nw,
                                     drop_last=False,
                                     collate_fn=train_label_dataset.collate_fn_mpl)
-    # train_label_loader = DataLoader(train_label_dataset,
-    #                                 batch_size=batch_size,
-    #                                 sampler=SequentialSampler(train_label_dataset),
-    #                                 pin_memory=True,
-    #                                 num_workers=nw,
-    #                                 drop_last=False,
-    #                                 collate_fn=train_label_dataset.collate_fn_mpl)
+
     train_unlabel_loader = DataLoader(train_unlabel_dataset,
                                       batch_size=batch_size * args.mu,
                                       sampler=SubsetRandomSampler(range(len(train_unlabel_dataset))),
