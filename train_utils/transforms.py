@@ -983,6 +983,46 @@ class TransformMPL(object):
         return [ori_img,aug_img], ori_target
 
 
+class TransformConsistency(object):
+    def __init__(self, args, mean, std,n=2,m=10):
+        weak_scale = 0.2
+        weak_rot = 30
+        strong_scale = 0.35
+        strong_rot = 45
+
+        # flag for halfbody and flip
+
+        with open(args.keypoints_path, "r") as f:
+            animal_kps_info = json.load(f)
+        kps_weights = np.array(animal_kps_info["kps_weights"],dtype=np.float32).reshape((args.num_joints,))
+
+        self.weak = Compose([
+            # HalfBody(0.3, animal_kps_info["upper_body_ids"], animal_kps_info["lower_body_ids"]),
+            AffineTransform(scale=(1 - weak_scale, 1 + weak_scale), rotation=(-weak_rot, weak_rot), fixed_size=(256,256)),
+            # RandomHorizontalFlip(0.5, animal_kps_info["flip_pairs"]),
+            KeypointToHeatMap(heatmap_hw=(64,64), gaussian_sigma=2, keypoints_weights=kps_weights)]
+        )
+        self.strong = Compose([
+            # HalfBody(0.3, animal_kps_info["upper_body_ids"], animal_kps_info["lower_body_ids"]),
+            AffineTransform(scale=(1 - strong_scale,1 + strong_scale), rotation=(-strong_rot, strong_rot),
+                            fixed_size=(256, 256)),
+            # RandomHorizontalFlip(0.5, animal_kps_info["flip_pairs"]),
+            KeypointToHeatMap(heatmap_hw=(64, 64), gaussian_sigma=2, keypoints_weights=kps_weights),
+            RandWeakAugment(n,m)]
+        )
+        self.normalize = Compose([
+            ToTensor(),
+            Normalize(mean=mean, std=std)])
+
+    def __call__(self, img,target):
+        weak_img,weak_target = self.weak(img,copy.deepcopy(target))
+        strong_img,strong_target = self.strong(img,copy.deepcopy(target))
+        weak_img,weak_target = self.normalize(weak_img,weak_target)
+        strong_img,strong_target = self.normalize(strong_img,strong_target)
+
+        return [weak_img,strong_img], [weak_target,strong_target]
+
+
 class TransformFixMatch(object):
     def __init__(self, args, mean, std,n=2,m=10):
         with open(args.keypoints_path, "r") as f:

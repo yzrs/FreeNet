@@ -16,8 +16,250 @@ from outer_tools.lib.core.function import validate
 from outer_tools.lib import dataset_animal
 from torchvision import transforms as tf
 import logging
+from matplotlib import pyplot as plt
 
 logger = logging.getLogger(__name__)
+
+
+def ours_ap10k_consistency(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_model,t_optimizer,s_optimizer,
+                           t_scheduler, s_scheduler, t_scaler, s_scaler, writer_dict):
+    """
+    :param writer_dict: writer
+    :param args: ..
+    :param labeled_loader: ..
+    :param unlabeled_loader: ..
+    :param teacher_model: ..
+    :param student_model: ..
+    :param t_optimizer: ..
+    :param s_optimizer: ..
+    :param t_scheduler: ..
+    :param s_scheduler: ..
+    :param t_scaler: ..
+    :param s_scaler: ..
+    :return: none
+    """
+    # update args info
+    program_info_path = os.path.join(args.output_dir, "info", "program_info.txt")
+    args.info = "conditional_PL_conditional_feedback"
+    args_str = json.dumps(vars(args))
+    with open(program_info_path, "w") as f:
+        f.write(args_str)
+    logger.info(args_str)
+
+    with open(args.keypoints_path, 'r') as f:
+        kps_info = json.load(f)
+    kps_weights = kps_info['kps_weights']
+    criterion = AvgImgMSELoss(kps_weights=kps_weights, num_joints=args.num_joints)
+
+    labeled_iter = iter(labeled_loader)
+    unlabeled_iter = iter(unlabeled_loader)
+
+    teacher_model.train()
+    student_model.train()
+
+    s_optimizer.zero_grad()
+    t_optimizer.zero_grad()
+
+    for step in range(args.start_step, args.total_steps):
+        if step % args.eval_step == 0:
+            pbar = tqdm(range(args.eval_step))
+            batch_time = AverageMeter()
+            data_time = AverageMeter()
+            s_losses = AverageMeter()
+            t_losses = AverageMeter()
+
+        end = time.time()
+
+        # train
+        try:
+            (images_l_weak, images_l_strong), (weak_label_targets,strong_label_targets) = next(labeled_iter)
+        except StopIteration:
+            labeled_iter = iter(labeled_loader)
+            (images_l_weak, images_l_strong), (weak_label_targets,strong_label_targets) = next(labeled_iter)
+        except Exception as e:
+            # 处理其他特定异常情况
+            # 可以输出异常信息等
+            logger.error("An error occurred:", e)
+            return
+        try:
+            (images_u_weak, images_u_strong), (weak_unlabel_targets,strong_unlabel_targets) = next(unlabeled_iter)
+        except StopIteration:
+            unlabeled_iter = iter(unlabeled_loader)
+            (images_u_weak, images_u_strong), (weak_unlabel_targets,strong_unlabel_targets) = next(unlabeled_iter)
+        except Exception as e:
+            logger.error("An error occurred:", e)
+            return
+
+        data_time.update(time.time() - end)
+
+        images_l_weak = images_l_weak.cuda()
+        images_l_strong = images_l_strong.cuda()
+        images_u_weak = images_u_weak.cuda()
+        images_u_strong = images_u_strong.cuda()
+
+        with amp.autocast(enabled=args.amp):
+            label_batch_size = images_l_weak.shape[0]
+            images_weak = torch.cat((images_l_weak, images_u_weak)).contiguous()
+            images_strong = torch.cat((images_l_strong, images_u_strong)).contiguous()
+            # 使teacher model 和 student model 的batch normalization层相似
+            with torch.no_grad():
+                _ = student_model(images_weak)
+
+            t_logits_strong = teacher_model(images_strong)
+            s_logits_weak = student_model(images_strong)
+            t_logits_weak = teacher_model(images_weak)
+
+            t_logits_l = t_logits_weak[:label_batch_size]
+            t_logits_u = t_logits_weak[label_batch_size:]
+            s_logits_l = s_logits_weak[:label_batch_size]
+            s_logits_u = s_logits_weak[label_batch_size:]
+            t_logits_aug_u = t_logits_strong[label_batch_size:]
+
+            # semi-supervise 硬伪标签
+            weak_coords, weak_confidence = get_max_preds(t_logits_u)
+            strong_coords, strong_confidence = get_max_preds(t_logits_aug_u)
+
+            weak_confidence = weak_confidence.float().squeeze(-1)
+            strong_confidence = strong_confidence.float().squeeze(-1)
+
+            weak_reverse_trans = torch.tensor([t['reverse_trans'] for t in weak_label_targets]).to(torch.float16).cuda()
+            strong_trans = torch.tensor([t['trans'] for t in strong_label_targets]).to(torch.float16).cuda()
+            # [64,64] -> [256,256]
+            weak_trans_coords = weak_coords * 4
+            for i in range(t_logits_aug_u.shape[0]):
+                # reverse to original coord
+                mask = torch.logical_and(weak_trans_coords[i,:,0] > 0, weak_trans_coords[i,:,1] > 0)
+                pt = weak_trans_coords[i,mask]
+                t = weak_reverse_trans[i]
+                ones = torch.ones((pt.shape[0],1),dtype=torch.float16).cuda()
+                pt = torch.cat((pt,ones),dim=1).T
+                weak_trans_coords[i,mask] = torch.mm(t,pt).T
+
+                pt = weak_trans_coords[i, mask]
+                t = strong_trans[i]
+                ones = torch.ones((pt.shape[0], 1), dtype=torch.float16).cuda()
+                pt = torch.cat((pt, ones), dim=1).T
+                weak_trans_coords[i,mask] = torch.mm(t,pt).T
+
+            print('debug')
+
+        #     target_heatmaps = torch.stack([t["heatmap"] for t in weak_label_targets]).cuda(non_blocking=True)
+        #     target_visible = torch.stack([torch.tensor(t["visible"]) for t in weak_label_targets])
+        #     target_visible[target_visible != 0] = 1
+        #
+        #     # Conditional PL
+        #     group_indice_face = [0, 1, 2]
+        #     group_indice_front = [5, 6, 7, 8, 9, 10]
+        #     group_indice_back = [4, 11, 12, 13, 14, 15, 16]
+        #     group_indice_exclusive = [3]
+        #     group_indices = [group_indice_face, group_indice_front, group_indice_back,group_indice_exclusive]
+        #     confidence_thresholds = []
+        #     # random down
+        #     # min_ratios = [0.9, 0.75, 0.6, 0.5]
+        #     min_ratios = [0.5, 0.6, 0.65, 0.65]
+        #     # 扫描其中所有confidence 并排序
+        #     for i, indices in enumerate(group_indices):
+        #         group_confidences = []
+        #         for index in indices:
+        #             for j in range(tea_u_confidence.shape[0]):
+        #                 group_confidences.append(tea_u_confidence[j][index].item())
+        #         group_confidences = sorted(group_confidences, reverse=True)
+        #         cur_ratio = get_current_topkrate(step, args.down_step, min_rate=min_ratios[i])
+        #         sample_nums = len(group_confidences)
+        #         cur_confidence_th = max(group_confidences[min(int(sample_nums * cur_ratio), sample_nums - 1)], 0.2)
+        #         confidence_thresholds.append(cur_confidence_th)
+        #
+        #     tea_pseudo_visible = torch.zeros_like(tea_u_confidence)
+        #     for i, indices in enumerate(group_indices):
+        #         for index in indices:
+        #             tea_pseudo_visible[:, index] = tea_u_confidence[:, index] >= confidence_thresholds[i]
+        #     tea_pseudo_labels = generate_heatmap(coords, tea_pseudo_visible.cpu()).cuda()
+        #
+        #     s_loss_l = criterion(s_logits_l, target_heatmaps, target_visible)
+        #     s_loss_pl = criterion(s_logits_u, tea_pseudo_labels, tea_pseudo_visible)
+        #     s_loss = s_loss_l + s_loss_pl
+        #
+        # s_scaler.scale(s_loss).backward()
+        # if args.grad_clip > 0:
+        #     s_scaler.unscale_(s_optimizer)
+        #     nn.utils.clip_grad_norm_(student_model.parameters(), args.grad_clip)
+        # s_scaler.step(s_optimizer)
+        # s_scaler.update()
+        # s_scheduler.step()
+        #
+        # with amp.autocast(enabled=args.amp):
+        #     t_loss_l = criterion(t_logits_l, target_heatmaps, target_visible)
+        #
+        #     # conditional feedback for those sensitive keypoints
+        #     if step >= args.feedback_steps_start:
+        #         with torch.no_grad():
+        #             s_logits_l_new = student_model(images_l_aug)
+        #         s_loss_l_new = criterion(s_logits_l_new, target_heatmaps, target_visible)
+        #         dot_product = s_loss_l.detach() - s_loss_l_new
+        #
+        #         ratio_visible_good = 0.2
+        #         ratio_invisible_bad = 0.2
+        #         tea_u_kps_confidence = torch.clone(tea_u_confidence.detach()).flatten().cpu().numpy()
+        #         _, stu_u_confidence = get_max_preds(s_logits_u)
+        #         stu_u_kps_confidence = torch.clone(stu_u_confidence.detach()).flatten().cpu().numpy()
+        #         tea_u_kps_confidence = sorted(tea_u_kps_confidence, reverse=True)
+        #         stu_u_kps_confidence = sorted(stu_u_kps_confidence, reverse=True)
+        #         min_good_index = int(len(tea_u_kps_confidence) * ratio_visible_good)
+        #         max_bad_index = int(len(stu_u_kps_confidence) * (1 - ratio_invisible_bad))
+        #         min_good_th = max(tea_u_kps_confidence[min_good_index], stu_u_kps_confidence[min_good_index])
+        #         max_bad_th = min(tea_u_kps_confidence[max_bad_index], stu_u_kps_confidence[max_bad_index])
+        #         feedback_vis = torch.clone(tea_u_confidence.detach())
+        #         feedback_vis = torch.where((feedback_vis >= max_bad_th) & (feedback_vis <= min_good_th),
+        #                                    torch.ones_like(feedback_vis), torch.zeros_like(feedback_vis))
+        #         # feedback_vis = torch.where((feedback_vis >= max_bad_th),torch.ones_like(feedback_vis), torch.zeros_like(feedback_vis))
+        #         # feedback hard heatmap
+        #         coords_aug, _ = get_max_preds(t_logits_aug_u)
+        #         t_logits_aug_u_pl = generate_heatmap(coords_aug, feedback_vis.cpu()).cuda()
+        #         feedback_term = criterion(t_logits_aug_u, t_logits_aug_u_pl, feedback_vis)
+        #         t_loss_feedback = dot_product * feedback_term
+        #         feedback_factor = min(1.,(step + 1 - args.feedback_steps_start) /
+        #                               (args.feedback_steps_complete - args.feedback_steps_start)) * args.feedback_weight
+        #         t_loss = t_loss_l + t_loss_feedback * feedback_factor
+        #
+        #     else:
+        #         t_loss = t_loss_l
+        #
+        # t_scaler.scale(t_loss).backward()
+        # if args.grad_clip > 0:
+        #     t_scaler.unscale_(t_optimizer)
+        #     nn.utils.clip_grad_norm_(teacher_model.parameters(), args.grad_clip)
+        # t_scaler.step(t_optimizer)
+        # t_scaler.update()
+        # t_scheduler.step()
+        #
+        # s_optimizer.zero_grad()
+        # t_optimizer.zero_grad()
+        #
+        # s_losses.update(s_loss.item())
+        # t_losses.update(t_loss.item())
+        #
+        # batch_time.update(time.time() - end)
+        # pbar.set_description(
+        #     f"Train Iter: {step:4}/{args.total_steps:4}. "
+        #     f"S_LR: {s_optimizer.param_groups[0]['lr']:.5f}. T_LR: {t_optimizer.param_groups[0]['lr']:.5f}. "
+        #     f"Batch: {batch_time.avg:.2f}s. S_Loss: {s_losses.avg:.4f}. T_Loss: {t_losses.avg:.4f}. ")
+        # pbar.update()
+        #
+        # # evaluate
+        # if (step + 1) % args.eval_step == 0:
+        #     train_loss = {'Stu_Loss': s_losses.avg, 'Tea_Loss': t_losses.avg}
+        #     writer = writer_dict['writer']
+        #     global_steps = writer_dict['train_global_steps']
+        #     writer.add_scalars('Train_Loss', train_loss, global_steps)
+        #     writer_dict['train_global_steps'] = global_steps + 1
+        #
+        #     pbar.close()
+        #     teacher_model.eval()
+        #     student_model.eval()
+        #     ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+        #                      t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
+        #     teacher_model.train()
+        #     student_model.train()
 
 
 def ours_ap10k(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_model,t_optimizer,s_optimizer,
@@ -233,6 +475,259 @@ def ours_ap10k(cfg, args, labeled_loader, unlabeled_loader, teacher_model, stude
             student_model.eval()
             ap10k_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
                              t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
+            teacher_model.train()
+            student_model.train()
+
+
+def ours_ap10k_animalpose_draw(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_model,t_optimizer,s_optimizer,
+                          t_scheduler, s_scheduler, t_scaler, s_scaler, writer_dict):
+    """
+    :param writer_dict: writer
+    :param args: ..
+    :param labeled_loader: ..
+    :param unlabeled_loader: ..
+    :param teacher_model: ..
+    :param student_model: ..
+    :param t_optimizer: ..
+    :param s_optimizer: ..
+    :param t_scheduler: ..
+    :param s_scheduler: ..
+    :param t_scaler: ..
+    :param s_scaler: ..
+    :return: none
+    """
+    # update args info
+    program_info_path = os.path.join(args.output_dir, "info", "program_info.txt")
+    args.info = "conditional_PL_conditional_feedback"
+    args_str = json.dumps(vars(args))
+    with open(program_info_path, "w") as f:
+        f.write(args_str)
+    logger.info(args_str)
+
+    with open(args.keypoints_path, 'r') as f:
+        kps_info = json.load(f)
+    kps_weights = kps_info['kps_weights']
+    criterion = AvgImgMSELoss(kps_weights=kps_weights, num_joints=args.num_joints)
+
+    labeled_iter = iter(labeled_loader)
+    unlabeled_iter = iter(unlabeled_loader)
+
+    teacher_model.train()
+    student_model.train()
+
+    s_optimizer.zero_grad()
+    t_optimizer.zero_grad()
+
+    for step in range(args.start_step, args.total_steps):
+        if step % args.eval_step == 0:
+            pbar = tqdm(range(args.eval_step))
+            batch_time = AverageMeter()
+            data_time = AverageMeter()
+            s_losses = AverageMeter()
+            t_losses = AverageMeter()
+
+        end = time.time()
+
+        # train
+        try:
+            (images_l_ori, images_l_aug), targets = next(labeled_iter)
+        except StopIteration:
+            labeled_iter = iter(labeled_loader)
+            (images_l_ori, images_l_aug), targets = next(labeled_iter)
+        except Exception as e:
+            # 处理其他特定异常情况
+            # 可以输出异常信息等
+            logger.error("An error occurred:", e)
+            return
+        try:
+            (images_u_ori, images_u_aug), _ = next(unlabeled_iter)
+        except StopIteration:
+            unlabeled_iter = iter(unlabeled_loader)
+            (images_u_ori, images_u_aug), _ = next(unlabeled_iter)
+        except Exception as e:
+            logger.error("An error occurred:", e)
+            return
+
+        data_time.update(time.time() - end)
+
+        images_l_ori = images_l_ori.cuda()
+        images_l_aug = images_l_aug.cuda()
+        images_u_ori = images_u_ori.cuda()
+        images_u_aug = images_u_aug.cuda()
+
+        with amp.autocast(enabled=args.amp):
+            label_batch_size = images_l_ori.shape[0]
+            images_ori = torch.cat((images_l_ori, images_u_ori)).contiguous()
+            images_aug = torch.cat((images_l_aug, images_u_aug)).contiguous()
+            # 使teacher model 和 student model 的batch normalization层相似
+            with torch.no_grad():
+                _ = student_model(images_ori)
+
+            t_logits_aug = teacher_model(images_aug)
+            s_logits_aug = student_model(images_aug)
+            t_logits_ori = teacher_model(images_ori)
+
+            t_logits_l = t_logits_ori[:label_batch_size]
+            t_logits_u = t_logits_ori[label_batch_size:]
+            s_logits_l = s_logits_aug[:label_batch_size]
+            s_logits_u = s_logits_aug[label_batch_size:]
+            t_logits_aug_u = t_logits_aug[label_batch_size:]
+
+            target_heatmaps = torch.stack([t["heatmap"] for t in targets]).cuda(non_blocking=True)
+            target_visible = torch.stack([torch.tensor(t["visible"]) for t in targets])
+            target_visible[target_visible != 0] = 1
+
+            gt_coords,gt_vis = get_max_preds(target_heatmaps)
+            gt_coords = gt_coords * 4
+            gt_seperate_heatmaps = generate_heatmap(gt_coords,gt_vis,heatmap_size=(256,256))
+            gt_heatmaps = torch.sum(gt_seperate_heatmaps,dim=1,keepdim=False).cpu()
+
+            dt_coords,dt_vis = get_max_preds(t_logits_l)
+            dt_vis = (dt_vis>0.1).float()
+            dt_coords = dt_coords * 4
+            dt_seperate_heatmaps = generate_heatmap(dt_coords,dt_vis,heatmap_size=(256,256))
+            dt_heatmaps = torch.sum(dt_seperate_heatmaps,dim=1,keepdim=False).cpu()
+
+            draw = True
+            if draw:
+                for i in range(args.batch_size):
+                    # 假设你的图像tensor是images，且Normalize的均值和标准差是mean和std
+                    mean = torch.tensor([0.485, 0.456, 0.406])
+                    std = torch.tensor([0.229, 0.224, 0.225])
+
+                    # 反归一化
+                    images = images_l_ori[i].cpu()  # 去掉批次维度
+                    images = images * std.view(3, 1, 1) + mean.view(3, 1, 1)  # 反归一化
+                    images = images.clamp(0, 1)  # 将值裁剪到0-1的范围内
+
+                    # 转换为PIL图像
+                    to_pil = tf.ToPILImage()
+                    image = to_pil(images)
+
+                    fig,ax = plt.subplots(1,2)
+                    im0 = ax[0].imshow(image)
+                    ax[0].imshow(gt_heatmaps[i], alpha=0.5, cmap='hot')
+                    im1 = ax[1].imshow(image)
+                    ax[1].imshow(dt_heatmaps[i], alpha=0.5, cmap='hot')
+                    plt.show()
+
+            # semi-supervise 硬伪标签
+            coords, tea_u_confidence = get_max_preds(t_logits_u)
+            tea_u_confidence = tea_u_confidence.float().squeeze(-1)
+
+            # Conditional PL
+            group_indice_face = [0, 1, 2]
+            # Ear Re-grouping
+            group_indice_front = [5, 6, 7, 8, 9, 10, 17, 18]
+            group_indice_back = [4, 11, 12, 13, 14, 15, 16]
+            group_indice_exclusive = [3, 19, 20]
+            group_indices = [group_indice_face, group_indice_front, group_indice_back,group_indice_exclusive]
+            confidence_thresholds = []
+            # random down
+            # min_ratios = [0.9, 0.75, 0.6, 0.5]
+            min_ratios = [0.5, 0.6, 0.65, 0.65]
+
+            # 扫描其中所有confidence 并排序
+            for i, indices in enumerate(group_indices):
+                group_confidences = []
+                for index in indices:
+                    for j in range(tea_u_confidence.shape[0]):
+                        group_confidences.append(tea_u_confidence[j][index].item())
+                group_confidences = sorted(group_confidences, reverse=True)
+                cur_ratio = get_current_topkrate(step, args.down_step, min_rate=min_ratios[i])
+                sample_nums = len(group_confidences)
+                cur_confidence_th = max(group_confidences[min(int(sample_nums * cur_ratio), sample_nums - 1)], 0.2)
+                confidence_thresholds.append(cur_confidence_th)
+
+            tea_pseudo_visible = torch.zeros_like(tea_u_confidence)
+            for i, indices in enumerate(group_indices):
+                for index in indices:
+                    tea_pseudo_visible[:, index] = tea_u_confidence[:, index] >= confidence_thresholds[i]
+            tea_pseudo_labels = generate_heatmap(coords, tea_pseudo_visible.cpu()).cuda()
+
+            s_loss_l = criterion(s_logits_l, target_heatmaps, target_visible)
+            s_loss_pl = criterion(s_logits_u, tea_pseudo_labels, tea_pseudo_visible)
+            s_loss = s_loss_l + s_loss_pl
+
+        s_scaler.scale(s_loss).backward()
+        if args.grad_clip > 0:
+            s_scaler.unscale_(s_optimizer)
+            nn.utils.clip_grad_norm_(student_model.parameters(), args.grad_clip)
+        s_scaler.step(s_optimizer)
+        s_scaler.update()
+        s_scheduler.step()
+
+        with amp.autocast(enabled=args.amp):
+            t_loss_l = criterion(t_logits_l, target_heatmaps, target_visible)
+
+            # conditional feedback for those sensitive keypoints
+            if step >= args.feedback_steps_start:
+                with torch.no_grad():
+                    s_logits_l_new = student_model(images_l_aug)
+                s_loss_l_new = criterion(s_logits_l_new, target_heatmaps, target_visible)
+                dot_product = s_loss_l.detach() - s_loss_l_new
+
+                ratio_visible_good = 0.2
+                ratio_invisible_bad = 0.2
+                tea_u_kps_confidence = torch.clone(tea_u_confidence.detach()).flatten().cpu().numpy()
+                _, stu_u_confidence = get_max_preds(s_logits_u)
+                stu_u_kps_confidence = torch.clone(stu_u_confidence.detach()).flatten().cpu().numpy()
+                tea_u_kps_confidence = sorted(tea_u_kps_confidence, reverse=True)
+                stu_u_kps_confidence = sorted(stu_u_kps_confidence, reverse=True)
+                min_good_index = int(len(tea_u_kps_confidence) * ratio_visible_good)
+                max_bad_index = int(len(stu_u_kps_confidence) * (1 - ratio_invisible_bad))
+                min_good_th = max(tea_u_kps_confidence[min_good_index], stu_u_kps_confidence[min_good_index])
+                max_bad_th = min(tea_u_kps_confidence[max_bad_index], stu_u_kps_confidence[max_bad_index])
+                feedback_vis = torch.clone(tea_u_confidence.detach())
+                feedback_vis = torch.where((feedback_vis >= max_bad_th) & (feedback_vis <= min_good_th),
+                                           torch.ones_like(feedback_vis), torch.zeros_like(feedback_vis))
+                # feedback_vis = torch.where((feedback_vis >= max_bad_th),torch.ones_like(feedback_vis), torch.zeros_like(feedback_vis))
+                # feedback hard heatmap
+                coords_aug, _ = get_max_preds(t_logits_aug_u)
+                t_logits_aug_u_pl = generate_heatmap(coords_aug, feedback_vis.cpu()).cuda()
+                feedback_term = criterion(t_logits_aug_u, t_logits_aug_u_pl, feedback_vis)
+                t_loss_feedback = dot_product * feedback_term
+                feedback_factor = min(1.,(step + 1 - args.feedback_steps_start) /
+                                      (args.feedback_steps_complete - args.feedback_steps_start)) * args.feedback_weight
+                t_loss = t_loss_l + t_loss_feedback * feedback_factor
+
+            else:
+                t_loss = t_loss_l
+
+        t_scaler.scale(t_loss).backward()
+        if args.grad_clip > 0:
+            t_scaler.unscale_(t_optimizer)
+            nn.utils.clip_grad_norm_(teacher_model.parameters(), args.grad_clip)
+        t_scaler.step(t_optimizer)
+        t_scaler.update()
+        t_scheduler.step()
+
+        s_optimizer.zero_grad()
+        t_optimizer.zero_grad()
+
+        s_losses.update(s_loss.item())
+        t_losses.update(t_loss.item())
+
+        batch_time.update(time.time() - end)
+        pbar.set_description(
+            f"Train Iter: {step:4}/{args.total_steps:4}. "
+            f"S_LR: {s_optimizer.param_groups[0]['lr']:.5f}. T_LR: {t_optimizer.param_groups[0]['lr']:.5f}. "
+            f"Batch: {batch_time.avg:.2f}s. S_Loss: {s_losses.avg:.4f}. T_Loss: {t_losses.avg:.4f}. ")
+        pbar.update()
+
+        # evaluate
+        if (step + 1) % args.eval_step == 0:
+            train_loss = {'Stu_Loss': s_losses.avg, 'Tea_Loss': t_losses.avg}
+            writer = writer_dict['writer']
+            global_steps = writer_dict['train_global_steps']
+            writer.add_scalars('Train_Loss', train_loss, global_steps)
+            writer_dict['train_global_steps'] = global_steps + 1
+
+            pbar.close()
+            teacher_model.eval()
+            student_model.eval()
+            ap10k_animalpose_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+                                        t_scheduler,s_scheduler, t_scaler, s_scaler, writer_dict)
             teacher_model.train()
             student_model.train()
 

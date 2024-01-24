@@ -69,28 +69,14 @@ def main(cfg,args):
     train_label_dataset.get_kps_num(args)
     train_unlabel_dataset.get_kps_num(args)
 
-    # index = [328,1746,8895]
-    # index = [1729]
-    # selected_items = [train_label_dataset.valid_lists[0]['annotations'][i] for i in index]
-    # for item in reversed(selected_items):
-    #     train_label_dataset.valid_lists[0]['annotations'].insert(0,item)
-
-    # imgid = [56676,1038,41119,9756]
-    # for i,anno in enumerate(train_label_dataset.valid_lists[0]['annotations']):
-    #     if anno['image_id'] in imgid:
-    #         print("Index:{} Imgid:{}".format(i,anno['image_id']))
-
     batch_size = args.batch_size
     nw = args.workers  # number of workers
     logger.info('Using %g dataloader workers' % nw)
     #
     base_weight_path = args.pretrained_model_path
     tea_weight_name = args.pretrained_weights_name
-    stu_weight_name = 'pretrained_ori.pth'
     tea_pretrained_weights_path = os.path.join(base_weight_path,tea_weight_name)
-    stu_pretrained_weights_path = os.path.join(base_weight_path,stu_weight_name)
     t_model = HighResolutionNet(num_joints=args.num_joints)
-    stu_checkpoint = torch.load(stu_pretrained_weights_path)
     tea_checkpoint = torch.load(tea_pretrained_weights_path)
 
     attr_flag = False
@@ -103,10 +89,9 @@ def main(cfg,args):
         t_model.load_state_dict(tea_checkpoint)
 
     s_model = HighResolutionNet(num_joints=args.num_joints)
-    s_model.load_state_dict(stu_checkpoint,strict=False)
+    s_model.init_weights()
 
     logger.info(f"teacher model loaded from {tea_pretrained_weights_path}:{key}")
-    logger.info(f"student model loaded from {stu_pretrained_weights_path}")
 
     t_model = torch.nn.DataParallel(t_model,device_ids=args.gpus).cuda()
     s_model = torch.nn.DataParallel(s_model,device_ids=args.gpus).cuda()

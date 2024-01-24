@@ -3,8 +3,11 @@ from copy import deepcopy
 import torch.nn as nn
 import torch
 import os
+import logging
 
 BN_MOMENTUM = 0.1
+
+logger = logging.getLogger(__name__)
 
 
 class BasicBlock(nn.Module):
@@ -280,6 +283,28 @@ class HighResolutionNet(nn.Module):
         x = self.final_layer(x[0])
 
         return x
+
+    def init_weights(self):
+        logger.info('=> init weights from normal distribution')
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.001)
+                for name, _ in m.named_parameters():
+                    if name in ['bias']:
+                        nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+        for m in self.modules():
+            if hasattr(m, 'transform_matrix_conv'):
+                nn.init.constant_(m.transform_matrix_conv.weight, 0)
+                if hasattr(m, 'bias'):
+                    nn.init.constant_(m.transform_matrix_conv.bias, 0)
+            if hasattr(m, 'translation_conv'):
+                nn.init.constant_(m.translation_conv.weight, 0)
+                if hasattr(m, 'bias'):
+                    nn.init.constant_(m.translation_conv.bias, 0)
 
 
 def create_model(num_joints, weight_path,load_pretrain_weights=True,finetune=False):

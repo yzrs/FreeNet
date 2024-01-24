@@ -429,6 +429,17 @@ class CocoKeypoint(data.Dataset):
         aug_imgs_tensor = torch.stack(aug_imgs)
         return (ori_imgs_tensor,aug_imgs_tensor), targets_list
 
+    @staticmethod
+    def collate_fn_consistency(batch):
+        imgs_list, targets_list = list(zip(*batch))
+        weak_imgs = [imgs[0] for imgs in imgs_list]
+        strong_imgs = [imgs[1] for imgs in imgs_list]
+        weak_targets = [targets[0] for targets in targets_list]
+        strong_targets = [targets[1] for targets in targets_list]
+        weak_imgs_tensor = torch.stack(weak_imgs)
+        strong_imgs_tensor = torch.stack(strong_imgs)
+        return (weak_imgs_tensor,strong_imgs_tensor), (weak_targets,strong_targets)
+
 
 # merge info is a list of dictionary. Like:
 # [{"dataset":"ap_10k","mode":"test"}...}]
