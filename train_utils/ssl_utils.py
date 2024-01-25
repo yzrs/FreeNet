@@ -951,6 +951,197 @@ def ours_ap10k_animalpose(cfg, args, labeled_loader, unlabeled_loader, teacher_m
             student_model.train()
 
 
+def ours_ap10k_animalpose_single_network(cfg, args, labeled_loader, unlabeled_loader, model, optimizer,scheduler, scaler, writer_dict):
+    # update args info
+    program_info_path = os.path.join(args.output_dir, "info", "program_info.txt")
+    args.info = "Single_network"
+    args_str = json.dumps(vars(args))
+    with open(program_info_path, "w") as f:
+        f.write(args_str)
+    logger.info(args_str)
+
+    with open(args.keypoints_path, 'r') as f:
+        kps_info = json.load(f)
+    kps_weights = kps_info['kps_weights']
+    criterion = AvgImgMSELoss(kps_weights=kps_weights, num_joints=args.num_joints)
+
+    labeled_iter = iter(labeled_loader)
+    unlabeled_iter = iter(unlabeled_loader)
+
+    model.train()
+    optimizer.zero_grad()
+
+    for step in range(args.start_step, args.total_steps):
+        if step % args.eval_step == 0:
+            pbar = tqdm(range(args.eval_step))
+            batch_time = AverageMeter()
+            data_time = AverageMeter()
+            losses = AverageMeter()
+
+        end = time.time()
+
+        # train
+        try:
+            (images_l_ori, images_l_aug), targets = next(labeled_iter)
+        except StopIteration:
+            labeled_iter = iter(labeled_loader)
+            (images_l_ori, images_l_aug), targets = next(labeled_iter)
+        except Exception as e:
+            # 处理其他特定异常情况
+            # 可以输出异常信息等
+            logger.error("An error occurred:", e)
+            return
+        try:
+            (images_u_ori, images_u_aug), _ = next(unlabeled_iter)
+        except StopIteration:
+            unlabeled_iter = iter(unlabeled_loader)
+            (images_u_ori, images_u_aug), _ = next(unlabeled_iter)
+        except Exception as e:
+            logger.error("An error occurred:", e)
+            return
+
+        data_time.update(time.time() - end)
+
+        images_l_ori = images_l_ori.cuda()
+        images_l_aug = images_l_aug.cuda()
+        images_u_ori = images_u_ori.cuda()
+        images_u_aug = images_u_aug.cuda()
+
+        with amp.autocast(enabled=args.amp):
+            label_batch_size = images_l_ori.shape[0]
+            images_ori = torch.cat((images_l_ori, images_u_ori)).contiguous()
+            images_aug = torch.cat((images_l_aug, images_u_aug)).contiguous()
+
+            logits_aug = model(images_aug)
+            logits_ori = model(images_ori)
+
+            logits_ori_l = logits_ori[:label_batch_size]
+            logits_ori_u = logits_ori[label_batch_size:]
+            logits_aug_l = logits_aug[:label_batch_size]
+            logits_aug_u = logits_aug[label_batch_size:]
+
+            target_heatmaps = torch.stack([t["heatmap"] for t in targets]).cuda(non_blocking=True)
+            target_visible = torch.stack([torch.tensor(t["visible"]) for t in targets])
+            target_visible[target_visible != 0] = 1
+
+            loss_l = criterion(logits_aug_l, target_heatmaps, target_visible)
+
+        scaler.scale(loss_l).backward()
+        if args.grad_clip > 0:
+            scaler.unscale_(optimizer)
+            nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+        scaler.step(optimizer)
+        scaler.update()
+        scheduler.step()
+        optimizer.zero_grad()
+
+        with amp.autocast(enabled=args.amp):
+            logits_aug_u_new = model(images_aug[label_batch_size:])
+
+        # semi-supervise 硬伪标签
+        coords, ori_u_confidence = get_max_preds(logits_ori_u)
+        ori_u_confidence = ori_u_confidence.float().squeeze(-1)
+
+        # Conditional PL
+        group_indice_face = [0, 1, 2]
+        # Ear Re-grouping
+        group_indice_front = [5, 6, 7, 8, 9, 10, 17, 18]
+        group_indice_back = [4, 11, 12, 13, 14, 15, 16]
+        group_indice_exclusive = [3, 19, 20]
+        group_indices = [group_indice_face, group_indice_front, group_indice_back,group_indice_exclusive]
+        confidence_thresholds = []
+        # random down
+        # min_ratios = [0.9, 0.75, 0.6, 0.5]
+        min_ratios = [0.5, 0.6, 0.65, 0.65]
+
+        # 扫描其中所有confidence 并排序
+        for i, indices in enumerate(group_indices):
+            group_confidences = []
+            for index in indices:
+                for j in range(ori_u_confidence.shape[0]):
+                    group_confidences.append(ori_u_confidence[j][index].item())
+            group_confidences = sorted(group_confidences, reverse=True)
+            cur_ratio = get_current_topkrate(step, args.down_step, min_rate=min_ratios[i])
+            sample_nums = len(group_confidences)
+            cur_confidence_th = max(group_confidences[min(int(sample_nums * cur_ratio), sample_nums - 1)], 0.2)
+            confidence_thresholds.append(cur_confidence_th)
+
+        pseudo_visible = torch.zeros_like(ori_u_confidence)
+        for i, indices in enumerate(group_indices):
+            for index in indices:
+                pseudo_visible[:, index] = ori_u_confidence[:, index] >= confidence_thresholds[i]
+        pseudo_labels = generate_heatmap(coords, pseudo_visible.cpu()).cuda()
+
+        loss_pl = criterion(logits_aug_u_new, pseudo_labels, pseudo_visible)
+
+        with amp.autocast(enabled=args.amp):
+            # conditional feedback for those sensitive keypoints
+            if step >= args.feedback_steps_start:
+                with torch.no_grad():
+                    logits_ori_l_new = model(images_ori[:label_batch_size])
+
+                loss_l_new = criterion(logits_ori_l_new, target_heatmaps, target_visible)
+                dot_product = loss_l.detach() - loss_l_new
+
+                ratio_visible_good = 0.2
+                ratio_invisible_bad = 0.2
+                ori_u_kps_confidence = torch.clone(ori_u_confidence.detach()).flatten().cpu().numpy()
+                _, aug_u_confidence = get_max_preds(logits_aug_u_new)
+                aug_u_kps_confidence = torch.clone(aug_u_confidence.detach()).flatten().cpu().numpy()
+                ori_u_kps_confidence = sorted(ori_u_kps_confidence, reverse=True)
+                aug_u_kps_confidence = sorted(aug_u_kps_confidence, reverse=True)
+                min_good_index = int(len(ori_u_kps_confidence) * ratio_visible_good)
+                max_bad_index = int(len(aug_u_kps_confidence) * (1 - ratio_invisible_bad))
+                min_good_th = max(ori_u_kps_confidence[min_good_index], aug_u_kps_confidence[min_good_index])
+                max_bad_th = min(ori_u_kps_confidence[max_bad_index], aug_u_kps_confidence[max_bad_index])
+                feedback_vis = torch.clone(ori_u_confidence.detach())
+                feedback_vis = torch.where((feedback_vis >= max_bad_th) & (feedback_vis <= min_good_th),
+                                           torch.ones_like(feedback_vis), torch.zeros_like(feedback_vis))
+                # feedback_vis = torch.where((feedback_vis >= max_bad_th),torch.ones_like(feedback_vis), torch.zeros_like(feedback_vis))
+                # feedback hard heatmap
+                coords_aug, _ = get_max_preds(logits_aug_u_new)
+                logits_aug_u_new_pl = generate_heatmap(coords_aug, feedback_vis.cpu()).cuda()
+                feedback_term = criterion(logits_aug_u_new, logits_aug_u_new_pl, feedback_vis)
+                loss_feedback = dot_product * feedback_term
+                feedback_factor = min(1.,(step + 1 - args.feedback_steps_start) /
+                                      (args.feedback_steps_complete - args.feedback_steps_start)) * args.feedback_weight
+                loss = loss_pl + loss_feedback * feedback_factor
+
+            else:
+                loss = loss_pl
+
+        scaler.scale(loss).backward()
+        if args.grad_clip > 0:
+            scaler.unscale_(optimizer)
+            nn.utils.clip_grad_norm_(model.parameters(), args.grad_clip)
+        scaler.step(optimizer)
+        scaler.update()
+        scheduler.step()
+
+        optimizer.zero_grad()
+
+        losses.update(loss.item())
+
+        batch_time.update(time.time() - end)
+        pbar.set_description(
+            f"Train Iter: {step:4}/{args.total_steps:4}.LR: {optimizer.param_groups[0]['lr']:.5f}. "
+            f"Batch: {batch_time.avg:.2f}s. Loss: {losses.avg:.4f}. ")
+        pbar.update()
+
+        # evaluate
+        if (step + 1) % args.eval_step == 0:
+            train_loss = {'Loss': losses.avg}
+            writer = writer_dict['writer']
+            global_steps = writer_dict['train_global_steps']
+            writer.add_scalars('Train_Loss', train_loss, global_steps)
+            writer_dict['train_global_steps'] = global_steps + 1
+
+            pbar.close()
+            model.eval()
+            ap10k_animalpose_eval_single_model(cfg, args, step, model,optimizer, scheduler,scaler, writer_dict)
+            model.train()
+
+
 def finetune(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_model,t_optimizer,s_optimizer,
              t_scheduler, s_scheduler, t_scaler, s_scaler, writer_dict):
     """
@@ -1931,6 +2122,69 @@ def ap10k_animalpose_eval_model(cfg, args, step, teacher_model, student_model, t
             f"student_pck:{stu_pck:.6f}",
             f"teacher_oks:{tea_oks:.6f}",
             f"teacher_pck:{tea_pck:.6f}"
+        ]
+        txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
+        f.write(txt + "\n")
+        logger.info(txt)
+
+
+def ap10k_animalpose_eval_single_model(cfg, args, step, model, optimizer, scheduler,scaler, writer_dict):
+    """
+        For multi GPUs
+        This function directly use teacher model and student model themselves to validate
+        :param writer_dict: Summary Writer of TensorboardX
+        :param args: ...
+        :param step: current training step -> epoch
+        :param teacher_model: teacher model on multiGPUs
+        :param student_model: student model on multiGPUs
+        :param t_optimizer: used to save info
+        :param s_optimizer: used to save info
+        :param t_scheduler: used to save info
+        :param s_scheduler: used to save info
+        :param t_scaler: used to save info
+        :param s_scaler: used to save info
+        :param val_dataset: validating dataset.Here is AP-10K Val + Animal Pose Val
+        :return: None
+    """
+    epoch = step // args.eval_step
+    save_files = {
+        'model': model.module.state_dict() if hasattr(model,'module') else model.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'scheduler': scheduler.state_dict(),
+        'step': step,
+        'epoch': epoch}
+    if args.amp:
+        save_files["scaler"] = scaler.state_dict()
+
+    torch.save(save_files, "{}/checkpoint.pth".format(args.output_dir))
+
+    oks, pck = eval_from_scarcenet(cfg,model,args.output_dir)
+
+    if oks > args.best_oks:
+        args.best_oks = oks
+        args.best_oks_epoch = epoch
+        torch.save(save_files['model'], "{}/best-oks.pth".format(args.output_dir))
+    if pck > args.best_pck:
+        args.best_pck = pck
+        args.best_pck_epoch = epoch
+        torch.save(save_files['model'], "{}/best-pck.pth".format(args.output_dir))
+
+    oks_dict = {'OKS': oks}
+    pck_dict = {'PCK': pck}
+
+    writer = writer_dict['writer']
+    global_steps = writer_dict['valid_global_steps']
+    writer.add_scalars('Val_OKS', oks_dict, global_steps)
+    writer.add_scalars('Val_PCK', pck_dict, global_steps)
+    writer_dict['valid_global_steps'] = global_steps + 1
+
+    # write into txt
+    val_path = os.path.join(args.output_dir, "info/val_log.txt")
+    with open(val_path, "a") as f:
+        # 写入的数据包括coco指标还有loss和learning rate
+        result_info = [
+            f"oks:{oks:.6f}",
+            f"pck:{pck:.6f}"
         ]
         txt = "epoch:{} {}".format(epoch, '  '.join(result_info))
         f.write(txt + "\n")
