@@ -57,7 +57,7 @@ def main(cfg,args):
         ])
     }
 
-    train_dataset_info = [{"dataset":"ap_10k","mode":"train"},{"dataset":"ap_10k","mode":"val"},{"dataset":"ap_10k","mode":"test"}]
+    train_dataset_info = [{"dataset":"ap_10k","mode":"train"},{"dataset":"animal_pose","mode":"train"}]
     data_root = args.data_root
 
     train_label_dataset = MixKeypoint(root=data_root,merge_info=train_dataset_info,transform=data_transform['train'],num_joints=21)
