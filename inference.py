@@ -5,6 +5,7 @@ import cv2
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+import torchvision.transforms
 
 import train_utils.transforms
 from models.hrnet import HighResolutionNet
@@ -23,13 +24,15 @@ def inference():
 
     # Ls / + Lu / +Lf
     weights_path = "saved_weights/ls_lu_lf.pth"
-    model = HighResolutionNet(num_joints=21)
-    model.load_state_dict(torch.load(weights_path))
+    weights_path = "saved_weights/29K_mix_SL_best.pth"
+    model = HighResolutionNet(num_joints=26)
+    weights = torch.load(weights_path)
+    model.load_state_dict(weights['model'])
     model.eval()
     model.to("cuda:0")
 
     image = cv2.imread('test.jpg')
-
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # 将图像调整为固定大小
     desired_size = (256, 256)  # 设定目标大小
     resized_image = cv2.resize(image, desired_size)
@@ -50,10 +53,12 @@ def inference():
         # 反归一化图像tensor
         mean = torch.tensor([0.485, 0.456, 0.406])
         std = torch.tensor([0.229, 0.224, 0.225])
-        img_tensor = (normalized_image.cpu() * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1, 1)) * 255.0
+        img_tensor = (normalized_image.squeeze(0).cpu() * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1, 1))
+        img_tensor = img_tensor.clamp(0,1)
         # 将图像tensor转换为numpy数组
-        img_np = img_tensor.squeeze(0).numpy().transpose(1, 2, 0).astype(int)
-
+        # img_np = img_tensor.squeeze(0).numpy().transpose(1, 2, 0).astype(int)
+        to_pil = torchvision.transforms.ToPILImage()
+        img_np = to_pil(img_tensor)
         # 缩放关键点坐标至目标尺寸
         source_size = torch.tensor([256, 256])
         target_size = torch.tensor([64, 64])

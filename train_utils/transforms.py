@@ -983,6 +983,32 @@ class TransformMPL(object):
         return [ori_img,aug_img], ori_target
 
 
+class TransformDraw(object):
+    def __init__(self, args, mean, std,n=2,m=10):
+        with open(args.keypoints_path, "r") as f:
+            animal_kps_info = json.load(f)
+        kps_weights = np.array(animal_kps_info["kps_weights"],dtype=np.float32).reshape((args.num_joints,))
+
+        self.ori = Compose([
+            AffineTransform(scale=(1.0, 1.0), rotation=(0, 0), fixed_size=(256,256)),
+            KeypointToHeatMap(heatmap_hw=(64,64), gaussian_sigma=2, keypoints_weights=kps_weights)]
+        )
+        self.aug = Compose([
+            RandWeakAugment(n,m)]
+        )
+        self.normalize = Compose([
+            ToTensor(),
+            Normalize(mean=mean, std=std)])
+
+    def __call__(self, img,target):
+        ori_img,ori_target = self.ori(img,target)
+        aug_img,aug_target = self.aug(ori_img,ori_target)
+        ori_img,ori_target = self.normalize(ori_img,ori_target)
+        aug_img,aug_target = self.normalize(aug_img,aug_target)
+
+        return [ori_img,aug_img], ori_target
+
+
 class TransformConsistency(object):
     def __init__(self, args, mean, std,n=2,m=10):
         weak_scale = 0.2
