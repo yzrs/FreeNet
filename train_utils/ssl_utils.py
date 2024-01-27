@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import time
 
@@ -7,7 +8,7 @@ from torch import nn
 from torch.cuda import amp
 from tqdm import tqdm
 from train_utils.transforms import get_max_preds
-from train_utils.utils import (AverageMeter, generate_heatmap,
+from train_utils.utils import (AverageMeter, generate_heatmap,AvgImgMSELoss_v3,
                                AvgImgMSELoss, get_current_topkrate)
 from train_utils import transforms
 from train_utils.validation_mix import eval_group_pck, eval_model_parallel
@@ -822,6 +823,175 @@ def ours_ap10k_animalpose(cfg, args, labeled_loader, unlabeled_loader, teacher_m
 
             else:
                 t_loss = t_loss_l
+
+        t_scaler.scale(t_loss).backward()
+        if args.grad_clip > 0:
+            t_scaler.unscale_(t_optimizer)
+            nn.utils.clip_grad_norm_(teacher_model.parameters(), args.grad_clip)
+        t_scaler.step(t_optimizer)
+        t_scaler.update()
+        t_scheduler.step()
+
+        s_optimizer.zero_grad()
+        t_optimizer.zero_grad()
+
+        s_losses.update(s_loss.item())
+        t_losses.update(t_loss.item())
+
+        batch_time.update(time.time() - end)
+        pbar.set_description(
+            f"Train Iter: {step:4}/{args.total_steps:4}. "
+            f"S_LR: {s_optimizer.param_groups[0]['lr']:.5f}. T_LR: {t_optimizer.param_groups[0]['lr']:.5f}. "
+            f"Batch: {batch_time.avg:.2f}s. S_Loss: {s_losses.avg:.4f}. T_Loss: {t_losses.avg:.4f}. ")
+        pbar.update()
+
+        # evaluate
+        if (step + 1) % args.eval_step == 0:
+            train_loss = {'Stu_Loss': s_losses.avg, 'Tea_Loss': t_losses.avg}
+            kp_num = {'Head_PL':part_kp_num[0],'Front_PL':part_kp_num[1],'Back_PL':part_kp_num[2]}
+            part_kp_num = [0,0,0]
+            writer = writer_dict['writer']
+            global_steps = writer_dict['train_global_steps']
+            writer.add_scalars('Train_Loss', train_loss, global_steps)
+            writer.add_scalars('PL_kp_num', kp_num, global_steps)
+            writer_dict['train_global_steps'] = global_steps + 1
+
+            pbar.close()
+            teacher_model.eval()
+            student_model.eval()
+            ap10k_animalpose_eval_model(cfg, args, step, teacher_model, student_model, t_optimizer, s_optimizer,
+                                        t_scheduler, s_scheduler, t_scaler, s_scaler, writer_dict)
+            teacher_model.train()
+            student_model.train()
+
+
+def ours_ap10k_animalpose_small_loss(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_model, t_optimizer,
+                                     s_optimizer,t_scheduler, s_scheduler, t_scaler, s_scaler, writer_dict):
+    # update args info
+    program_info_path = os.path.join(args.output_dir, "info", "program_info.txt")
+    args.info = "small_loss"
+    args_str = json.dumps(vars(args))
+    with open(program_info_path, "w") as f:
+        f.write(args_str)
+    logger.info(args_str)
+
+    with open(args.keypoints_path, 'r') as f:
+        kps_info = json.load(f)
+    kps_weights = kps_info['kps_weights']
+    criterion = AvgImgMSELoss(kps_weights=kps_weights, num_joints=args.num_joints)
+    criterion_instance = AvgImgMSELoss_v3(kps_weights=kps_weights, num_joints=args.num_joints)
+
+    labeled_iter = iter(labeled_loader)
+    unlabeled_iter = iter(unlabeled_loader)
+
+    teacher_model.train()
+    student_model.train()
+
+    s_optimizer.zero_grad()
+    t_optimizer.zero_grad()
+
+    head_index = [0,1,2,3,17,18,19]
+    front_index = [5,6,7,8,9,10,20]
+    back_index = [4,11,12,13,14,15,16]
+    part_kp_num = [0,0,0]
+
+    for step in range(args.start_step, args.total_steps):
+        if step % args.eval_step == 0:
+            pbar = tqdm(range(args.eval_step))
+            batch_time = AverageMeter()
+            data_time = AverageMeter()
+            s_losses = AverageMeter()
+            t_losses = AverageMeter()
+
+        end = time.time()
+
+        # train
+        try:
+            (images_l_ori, images_l_aug), targets = next(labeled_iter)
+        except StopIteration:
+            labeled_iter = iter(labeled_loader)
+            (images_l_ori, images_l_aug), targets = next(labeled_iter)
+        except Exception as e:
+            # 处理其他特定异常情况
+            # 可以输出异常信息等
+            logger.error("An error occurred:", e)
+            return
+        try:
+            (images_u_ori, images_u_aug), _ = next(unlabeled_iter)
+        except StopIteration:
+            unlabeled_iter = iter(unlabeled_loader)
+            (images_u_ori, images_u_aug), _ = next(unlabeled_iter)
+        except Exception as e:
+            logger.error("An error occurred:", e)
+            return
+
+        data_time.update(time.time() - end)
+
+        images_l_ori = images_l_ori.cuda()
+        images_l_aug = images_l_aug.cuda()
+        images_u_ori = images_u_ori.cuda()
+        images_u_aug = images_u_aug.cuda()
+
+        with amp.autocast(enabled=args.amp):
+            label_batch_size = images_l_ori.shape[0]
+            images_ori = torch.cat((images_l_ori, images_u_ori)).contiguous()
+            images_aug = torch.cat((images_l_aug, images_u_aug)).contiguous()
+            # 使teacher model 和 student model 的batch normalization层相似
+            with torch.no_grad():
+                _ = student_model(images_ori)
+
+            t_logits_aug = teacher_model(images_aug)
+            s_logits_aug = student_model(images_aug)
+            t_logits_ori = teacher_model(images_ori)
+
+            t_logits_l = t_logits_ori[:label_batch_size]
+            t_logits_u = t_logits_ori[label_batch_size:]
+            s_logits_l = s_logits_aug[:label_batch_size]
+            s_logits_u = s_logits_aug[label_batch_size:]
+
+            target_heatmaps = torch.stack([t["heatmap"] for t in targets]).cuda(non_blocking=True)
+            target_visible = torch.stack([torch.tensor(t["visible"]) for t in targets])
+            target_visible[target_visible != 0] = 1
+
+            # semi-supervise 硬伪标签
+            coords, tea_u_confidence = get_max_preds(t_logits_u)
+            tea_pseudo_visible = (tea_u_confidence > 0.2).float().squeeze(-1)
+            tea_pseudo_labels = generate_heatmap(coords, tea_pseudo_visible.cpu()).cuda()
+
+            s_loss_l = criterion(s_logits_l, target_heatmaps, target_visible)
+            s_loss_instance_pl = criterion_instance(s_logits_u.detach(), tea_pseudo_labels, tea_pseudo_visible)
+
+            min_small_loss_ratio = 0.5
+            cur_small_loss_ratio = get_current_topkrate(step, args.down_step, min_rate=min_small_loss_ratio)
+            unlabel_batch_size = s_loss_instance_pl.shape[0]
+            selected_num = int(unlabel_batch_size * cur_small_loss_ratio)
+            _,indices = torch.topk(-torch.abs(s_loss_instance_pl),selected_num)
+
+            s_logits_u_small_loss = s_logits_u[indices]
+            tea_pseudo_labels_small_loss = tea_pseudo_labels[indices]
+            tea_pseudo_visible_small_loss = tea_pseudo_visible[indices]
+            s_loss_pl = criterion(s_logits_u_small_loss,tea_pseudo_labels_small_loss,tea_pseudo_visible_small_loss)
+
+            s_loss = s_loss_l + s_loss_pl
+
+            head_visible = tea_pseudo_visible_small_loss[:,head_index]
+            front_visible = tea_pseudo_visible_small_loss[:,front_index]
+            back_visible = tea_pseudo_visible_small_loss[:,back_index]
+            part_kp_num[0] += int(torch.sum(head_visible).item())
+            part_kp_num[1] += int(torch.sum(front_visible).item())
+            part_kp_num[2] += int(torch.sum(back_visible).item())
+
+        s_scaler.scale(s_loss).backward()
+        if args.grad_clip > 0:
+            s_scaler.unscale_(s_optimizer)
+            nn.utils.clip_grad_norm_(student_model.parameters(), args.grad_clip)
+        s_scaler.step(s_optimizer)
+        s_scaler.update()
+        s_scheduler.step()
+
+        with amp.autocast(enabled=args.amp):
+            t_loss_l = criterion(t_logits_aug[:label_batch_size], target_heatmaps, target_visible)
+            t_loss = t_loss_l
 
         t_scaler.scale(t_loss).backward()
         if args.grad_clip > 0:

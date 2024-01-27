@@ -284,6 +284,40 @@ class AvgImgMSELoss_v2(object):
         return avg_vis_kps_loss_per_img
 
 
+class AvgImgMSELoss_v3(object):
+    def __init__(self,kps_weights,num_joints):
+        self.criterion = torch.nn.MSELoss(reduction='none')
+        self.kps_weights = kps_weights
+        self.num_joints = num_joints
+
+    def __call__(self, logits, targets, visible):
+        assert len(logits.shape) == 4, 'logits should be 4-ndim'
+        # device = logits.device
+        logits = logits.to(torch.float32)
+        kps_weights = np.array(self.kps_weights,dtype=np.float32).reshape((self.num_joints,))
+
+        bs = logits.shape[0]
+        # [num_kps, H, W] -> [B, num_kps, H, W]
+        # [num_kps] -> [B, num_kps]
+        # 使用 repeat 函数重复数组
+        kps_weights = np.repeat(kps_weights, bs)
+        # 使用 reshape 函数更改形状
+        # [B, num_kps, H, W] -> [B, num_kps]
+        kps_weights = kps_weights.reshape((bs, self.num_joints))
+        # 使用 torch.from_numpy 将 numpy 数组转换为 CPU 张量
+        # 使用 Tensor.to 将张量移动到 GPU 上
+        kps_weights = torch.from_numpy(kps_weights)
+
+        assert kps_weights.shape == visible.shape, 'kps_weights and visible should have the same shape'
+        kps_weights[visible == 0] = 0
+        # kps_weights = kps_weights.to(device)
+        kps_weights = kps_weights.cuda()
+
+        loss = self.criterion(logits, targets).mean(dim=[2, 3])
+        loss = torch.mean(loss * kps_weights,dim=1)
+        return loss
+
+
 # 计算数据集中所有有双眼标签的动物的双眼间距的均值
 def avg_eye_dist(args):
     eye_dists = []
