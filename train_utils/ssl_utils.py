@@ -9,7 +9,7 @@ from torch.cuda import amp
 from tqdm import tqdm
 from train_utils.transforms import get_max_preds
 from train_utils.utils import (AverageMeter, generate_heatmap,AvgImgMSELoss_v3,
-                               AvgImgMSELoss, get_current_topkrate)
+                               AvgImgMSELoss, get_current_topkrate,coteaching_rt)
 from train_utils import transforms
 from train_utils.validation_mix import eval_group_pck, eval_model_parallel
 import torch
@@ -961,8 +961,9 @@ def ours_ap10k_animalpose_small_loss(cfg, args, labeled_loader, unlabeled_loader
             s_loss_l = criterion(s_logits_l, target_heatmaps, target_visible)
             s_loss_instance_pl = criterion_instance(s_logits_u.detach(), tea_pseudo_labels, tea_pseudo_visible)
 
-            min_small_loss_ratio = 0.5
-            cur_small_loss_ratio = get_current_topkrate(step, args.down_step, min_rate=min_small_loss_ratio)
+            cur_epoch = step // args.eval_step
+            cur_small_loss_ratio = coteaching_rt(epoch=cur_epoch,tk=15,tao=0.5)
+
             unlabel_batch_size = s_loss_instance_pl.shape[0]
             selected_num = int(unlabel_batch_size * cur_small_loss_ratio)
             _,indices = torch.topk(-torch.abs(s_loss_instance_pl),selected_num)
