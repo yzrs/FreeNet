@@ -200,7 +200,7 @@ if __name__ == "__main__":
     parser.add_argument('--resume', default=None, type=str, help='path to resume file')
 
     parser.add_argument('--total-steps', default=120000, type=int, help='number of total steps to run')
-    parser.add_argument('--eval-step', default=50, type=int, help='number of eval steps to run')
+    parser.add_argument('--eval-step', default=10, type=int, help='number of eval steps to run')
     parser.add_argument('--start-step', default=0, type=int,help='manual epoch number (useful on restarts)')
     parser.add_argument('--warmup-steps', default=900, type=int, help='warmup steps')
     parser.add_argument('--student-wait-steps', default=0, type=int, help='warmup steps')

@@ -9,7 +9,7 @@ from torch.cuda import amp
 from tqdm import tqdm
 from train_utils.transforms import get_max_preds
 from train_utils.utils import (AverageMeter, generate_heatmap,AvgImgMSELoss_v3,
-                               AvgImgMSELoss, get_current_topkrate)
+                               AvgImgMSELoss, get_current_topkrate,coteaching_rt)
 from train_utils import transforms
 from train_utils.validation_mix import eval_group_pck, eval_model_parallel
 import torch
@@ -571,14 +571,14 @@ def ours_ap10k_animalpose_draw(cfg, args, labeled_loader, unlabeled_loader, teac
 
             # semi-supervise 硬伪标签
             coords, tea_u_confidence = get_max_preds(t_logits_u)
-            tea_u_confidence = (tea_u_confidence > 0.5).float().squeeze(-1)
+            tea_u_confidence = (tea_u_confidence > 0.3).float().squeeze(-1)
             tea_pseudo_labels = generate_heatmap(coords, tea_u_confidence.cpu()).cuda()
 
             draw_heatmap(images_u_ori,tea_pseudo_labels,s_logits_u,num_joints=26)
             # draw_heatmap(images_u_ori,s_logits_u,tea_pseudo_labels,num_joints=26)
 
 
-def draw_heatmap(images,logits_gt,logits_dt,num_joints=21,vis_th=0.1):
+def draw_heatmap(images,logits_gt,logits_dt,num_joints=21,vis_th=0.2):
     if num_joints == 21:
         exclusive_index = [3,17,18,19,20]
         share_index = [0,1,2,4,5,6,7,8,9,10,11,12,13,14,15,16]
@@ -589,29 +589,31 @@ def draw_heatmap(images,logits_gt,logits_dt,num_joints=21,vis_th=0.1):
         select_indices = list(range(19)) + list(range(21,26))
 
     exclusive_upper_bound = 1
-    share_upper_bound_gt = 0.5
-    share_upper_bound_dt = 0.35
+    # share_upper_bound_gt = 0.5
+    # share_upper_bound_dt = 0.35
 
     gt_coords, gt_vis = get_max_preds(logits_gt[:,select_indices,:,:])
     gt_coords = gt_coords * 4
     gt_seperate_heatmaps = generate_heatmap(gt_coords, gt_vis, heatmap_size=(256, 256),sigma=2)
-    gt_seperate_heatmaps[:, share_index] *= share_upper_bound_gt
-    gt_seperate_heatmaps[:, exclusive_index] = torch.where(gt_seperate_heatmaps[:, exclusive_index] > exclusive_upper_bound,
-                                                           exclusive_upper_bound,gt_seperate_heatmaps[:, exclusive_index])
-    gt_seperate_heatmaps[:, share_index] = torch.where(gt_seperate_heatmaps[:, share_index] > share_upper_bound_gt,
-                                                       share_upper_bound_gt, gt_seperate_heatmaps[:, share_index])
+    # gt_seperate_heatmaps[:, share_index] *= share_upper_bound_gt
+    # gt_seperate_heatmaps[:, exclusive_index] = torch.where(gt_seperate_heatmaps[:, exclusive_index] > exclusive_upper_bound,
+    #                                                        exclusive_upper_bound,gt_seperate_heatmaps[:, exclusive_index])
+    # gt_seperate_heatmaps[:, share_index] = torch.where(gt_seperate_heatmaps[:, share_index] > share_upper_bound_gt,
+    #                                                    share_upper_bound_gt, gt_seperate_heatmaps[:, share_index])
     gt_heatmaps = torch.sum(gt_seperate_heatmaps, dim=1, keepdim=False).cpu()
+    gt_heatmaps = torch.where(gt_heatmaps > 1, 1, gt_heatmaps)
 
     dt_coords, dt_vis = get_max_preds(logits_dt[:,select_indices,:,:])
     dt_vis = (dt_vis > vis_th).float()
     dt_coords = dt_coords * 4
     dt_seperate_heatmaps = generate_heatmap(dt_coords, dt_vis, heatmap_size=(256, 256),sigma=2)
-    dt_seperate_heatmaps[:,share_index] *= share_upper_bound_dt
-    dt_seperate_heatmaps[:,exclusive_index] = torch.where(dt_seperate_heatmaps[:,exclusive_index] > exclusive_upper_bound,
-                                                          exclusive_upper_bound,dt_seperate_heatmaps[:,exclusive_index])
-    dt_seperate_heatmaps[:,share_index] = torch.where(dt_seperate_heatmaps[:,share_index] > share_upper_bound_dt,
-                                                      share_upper_bound_dt,dt_seperate_heatmaps[:,share_index])
+    # dt_seperate_heatmaps[:,share_index] *= share_upper_bound_dt
+    # dt_seperate_heatmaps[:,exclusive_index] = torch.where(dt_seperate_heatmaps[:,exclusive_index] > exclusive_upper_bound,
+    #                                                       exclusive_upper_bound,dt_seperate_heatmaps[:,exclusive_index])
+    # dt_seperate_heatmaps[:,share_index] = torch.where(dt_seperate_heatmaps[:,share_index] > share_upper_bound_dt,
+    #                                                   share_upper_bound_dt,dt_seperate_heatmaps[:,share_index])
     dt_heatmaps = torch.sum(dt_seperate_heatmaps, dim=1, keepdim=False).cpu()
+    dt_heatmaps = torch.where(dt_heatmaps > 1, 1, dt_heatmaps)
 
     for i in range(images.shape[0]):
 
@@ -632,17 +634,28 @@ def draw_heatmap(images,logits_gt,logits_dt,num_joints=21,vis_th=0.1):
 
         fig, ax = plt.subplots(1, 2)
         ax[0].imshow(img)
-        ax[0].imshow(dt_heatmaps[i], alpha=0.5, cmap='jet')
+        ax[0].imshow(dt_heatmaps[i], alpha=0.5, cmap='hot')
         ax[1].imshow(img)
-        ax[1].imshow(gt_heatmaps[i], alpha=0.5, cmap='jet')
+        ax[1].imshow(gt_heatmaps[i], alpha=0.5, cmap='hot')
 
         ax[0].axis('off')
-        # ax[0].set_title('Base Network DT',fontsize=16)
-        ax[0].set_title('Adaptation Network DT',fontsize=16)
+        # ax[0].set_title('Base Network Output',fontsize=24)
+        ax[0].set_title('Adaptation Network Output',fontsize=24)
         ax[1].axis('off')
-        ax[1].set_title('Base Network PL',fontsize=16)
-        # ax[1].set_title('GT',fontsize=16)
+        ax[1].set_title('Pseudo Label',fontsize=24)
+        # ax[1].set_title('Ground Truth',fontsize=24)
+        plt.show()
 
+        fig, ax = plt.subplots(1, 2)
+        ax[0].imshow(dt_heatmaps[i], alpha=0.5, cmap='hot')
+        ax[1].imshow(gt_heatmaps[i], alpha=0.5, cmap='hot')
+
+        ax[0].axis('off')
+        # ax[0].set_title('Base Network Output',fontsize=24)
+        ax[0].set_title('Adaptation Network Output',fontsize=24)
+        ax[1].axis('off')
+        ax[1].set_title('Pseudo Label',fontsize=24)
+        # ax[1].set_title('Ground Truth',fontsize=24)
         plt.show()
 
 
@@ -961,8 +974,9 @@ def ours_ap10k_animalpose_small_loss(cfg, args, labeled_loader, unlabeled_loader
             s_loss_l = criterion(s_logits_l, target_heatmaps, target_visible)
             s_loss_instance_pl = criterion_instance(s_logits_u.detach(), tea_pseudo_labels, tea_pseudo_visible)
 
-            min_small_loss_ratio = 0.5
-            cur_small_loss_ratio = get_current_topkrate(step, args.down_step, min_rate=min_small_loss_ratio)
+            cur_epoch = step // args.eval_step
+            cur_small_loss_ratio = coteaching_rt(epoch=cur_epoch,tk=15,tao=0.5)
+
             unlabel_batch_size = s_loss_instance_pl.shape[0]
             selected_num = int(unlabel_batch_size * cur_small_loss_ratio)
             _,indices = torch.topk(-torch.abs(s_loss_instance_pl),selected_num)

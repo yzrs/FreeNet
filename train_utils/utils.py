@@ -2122,6 +2122,10 @@ def get_current_topkrate(epoch, rampdown_epoch, min_rate):
     return np.clip(r, min_rate, 1)
 
 
+def coteaching_rt(epoch,tk,tao):
+    return 1 - min(epoch * tao / tk, tao)
+
+
 def calculate_weight(start_step, mid_step, end_step, weight, current_step):
     """
     :param start_step:
