@@ -1,7 +1,6 @@
 // ------------------------------------------------------------------
 // Copyright (c) Microsoft
 // Licensed under The MIT License
-// Modified from MATLAB Faster R-CNN (https://github.com/shaoqingren/faster_rcnn)
 // ------------------------------------------------------------------
 
 #include "gpu_nms.hpp"
