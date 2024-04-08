@@ -33,46 +33,6 @@ data_cfg = dict(
 logger = logging.getLogger(__name__)
 ap10k2coco = np.array([2, 0, 1, 3, 4, 5, 8, 6, 9, 7, 10, 11, 14, 12, 15, 13, 16])
 class AnimalAP10KDataset(Kpt2dSviewRgbImgTopDownDataset):
-    """AP-10K dataset for animal pose estimation.
-
-    `AP-10K: A Benchmark for Animal Pose Estimation in the Wild’
-        Neurips Dataset Track'2021
-    More details can be found in the `paper
-    <https://arxiv.org/abs/2108.12617>`__ .
-
-    The dataset loads raw features and apply specified transforms
-    to return a dict containing the image tensors and other information.
-
-    AP-10K keypoint indexes::
-
-        0: 'L_Eye',
-        1: 'R_Eye',
-        2: 'Nose',
-        3: 'Neck',
-        4: 'root of tail',
-        5: 'L_Shoulder',
-        6: 'L_Elbow',
-        7: 'L_F_Paw',
-        8: 'R_Shoulder',
-        9: 'R_Elbow',
-        10: 'R_F_Paw,
-        11: 'L_Hip',
-        12: 'L_Knee',
-        13: 'L_B_Paw',
-        14: 'R_Hip',
-        15: 'R_Knee',
-        16: 'R_B_Paw'
-
-    Args:
-        ann_file (str): Path to the annotation file.
-        img_prefix (str): Path to a directory where images are held.
-            Default: None.
-        data_cfg (dict): config
-        pipeline (list[dict | callable]): A sequence of data transforms.
-        dataset_info (DatasetInfo): A class containing all dataset info.
-        test_mode (bool): Store True when building test or
-            validation dataset. Default: False.
-    """
 
     def __init__(self,
                  cfg,

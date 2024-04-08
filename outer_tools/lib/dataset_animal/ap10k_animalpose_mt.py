@@ -41,7 +41,6 @@ class AnimalAP10KMTDataset(Kpt2dSviewRgbImgTopDownDataset):
     `AP-10K: A Benchmark for Animal Pose Estimation in the Wild’
         Neurips Dataset Track'2021
     More details can be found in the `paper
-    <https://arxiv.org/abs/2108.12617>`__ .
 
     The dataset loads raw features and apply specified transforms
     to return a dict containing the image tensors and other information.

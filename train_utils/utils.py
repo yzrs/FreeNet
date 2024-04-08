@@ -56,7 +56,6 @@ def model_load_state_dict(model, state_dict):
 
 class AverageMeter(object):
     """Computes and stores the average and current value
-       Imported from https://github.com/pytorch/examples/blob/master/imagenet/main.py#L247-L262
     """
 
     def __init__(self):
@@ -1063,7 +1062,6 @@ def json_generate_by_name(args, name, dataset, path):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1103,7 +1101,6 @@ def json_generate(args, model, dataset, path):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1155,7 +1152,6 @@ def json_generate_batch(args, name, dataset, path):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1204,7 +1200,6 @@ def json_generate_key_batch(args, name, dataset, key, path):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1254,7 +1249,6 @@ def json_generate_batch_no_flip(args, name, dataset, path):
             # flipped_outputs = model(flipped_images)
             # flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # # feature is not aligned, shift flipped heatmap for higher accuracy
-            # # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             # flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             # outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1317,7 +1311,6 @@ def json_generate_batch_mix(args, name, dataset, path,num_joints=26):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1386,7 +1379,6 @@ def json_generate_batch_mix_key(args, name, dataset, path,key="model",num_joints
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1450,7 +1442,6 @@ def json_generate_batch_mix_key_parallel(args, name, dataset, path,key="model"):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1506,7 +1497,6 @@ def json_generate_batch_mix_model_parallel(args, model, dataset, path,num_joints
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1560,7 +1550,6 @@ def json_generate_batch_ssl(args, name, dataset, path,student=True):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -1611,7 +1600,6 @@ def json_generate_batch_ssl_v2(args, name, dataset, path,key_name):
             flipped_outputs = model(flipped_images)
             flipped_outputs = transforms.flip_back(flipped_outputs, animal_kps_info["flip_pairs"])
             # feature is not aligned, shift flipped heatmap for higher accuracy
-            # https://github.com/leoxiaobin/deep-high-resolution-net.pytorch/issues/22
             flipped_outputs[..., 1:] = flipped_outputs.clone()[..., 0:-1]
             outputs = (outputs + flipped_outputs) * 0.5
 
@@ -2111,7 +2099,6 @@ def feedback_func(s_logits_old,s_logits_new,targets_heatmap,targets_visible,t_lo
 
 
 def cosine_rampdown(current, rampdown_length):
-    """Cosine rampdown from https://arxiv.org/abs/1608.03983"""
     # assert 0 <= current <= rampdown_length
     current = np.clip(current, 0.0, rampdown_length)
     return float(.5 * (np.cos(np.pi * current / rampdown_length) + 1))

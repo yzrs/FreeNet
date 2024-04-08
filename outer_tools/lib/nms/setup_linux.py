@@ -2,7 +2,6 @@
 # Pose.gluon
 # Copyright (c) 2018-present Microsoft
 # Licensed under The MIT License [see LICENSE for details]
-# Modified from py-faster-rcnn (https://github.com/rbgirshick/py-faster-rcnn)
 # --------------------------------------------------------
 
 import os
@@ -16,7 +15,6 @@ import numpy as np
 def find_in_path(name, path):
     "Find a file in a search path"
     # Adapted fom
-    # http://code.activestate.com/recipes/52224-find-a-file-given-a-search-path/
     for dir in path.split(os.pathsep):
         binpath = pjoin(dir, name)
         if os.path.exists(binpath):

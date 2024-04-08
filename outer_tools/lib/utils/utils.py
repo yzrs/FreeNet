@@ -226,7 +226,6 @@ def update_ema_variables_spatial(model, ema_model, alpha, global_step):
 
 
 def sigmoid_rampup(current, rampup_length):
-    """Exponential rampup from https://arxiv.org/abs/1610.02242"""
     if rampup_length == 0:
         return 1.0
     else:
@@ -240,7 +239,6 @@ def get_current_consistency_weight(const_weight, epoch, consistency_rampup):
 
 
 def cosine_rampdown(current, rampdown_length):
-    """Cosine rampdown from https://arxiv.org/abs/1608.03983"""
     # assert 0 <= current <= rampdown_length
     current = np.clip(current, 0.0, rampdown_length)
     return float(.5 * (np.cos(np.pi * current / rampdown_length) + 1))
