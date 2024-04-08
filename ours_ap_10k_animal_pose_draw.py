@@ -57,9 +57,9 @@ def main(cfg,args):
         ])
     }
 
-    # train_dataset_info = [{"dataset":"tigdog","mode":"train"}]
+    train_dataset_info = [{"dataset":"tigdog","mode":"train"}]
     # train_dataset_info = [{"dataset":"ap_10k","mode":"train"}]
-    train_dataset_info = [{"dataset":"animal_pose","mode":"train"}]
+    # train_dataset_info = [{"dataset":"animal_pose","mode":"train"}]
     data_root = args.data_root
 
     train_label_dataset = MixKeypoint(root=data_root,merge_info=train_dataset_info,transform=data_transform['train'],num_joints=26)
@@ -95,7 +95,7 @@ def main(cfg,args):
     # t_model = HighResolutionNet(num_joints=args.num_joints)
     t_model = HighResolutionNet(num_joints=26)
 
-    stu_pretrained_weights_path = 'saved_weights/29K_mix_SL_best.pth'
+    stu_pretrained_weights_path = 'saved_weights/29K_mix_best.pth'
     tea_pretrained_weights_path = 'saved_weights/9K_best.pth'
     stu_checkpoint = torch.load(stu_pretrained_weights_path)['model']
     tea_checkpoint = torch.load(tea_pretrained_weights_path)

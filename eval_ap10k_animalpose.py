@@ -138,6 +138,7 @@ def main():
         pin_memory=True
     )
 
+    # keypoint PCK performance
     validate_mix_kps(cfg, valid_loader, valid_dataset, model, criterion,
                      final_output_dir, animalpose=args.animalpose, vis=args.vis)
 

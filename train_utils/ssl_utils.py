@@ -567,14 +567,14 @@ def ours_ap10k_animalpose_draw(cfg, args, labeled_loader, unlabeled_loader, teac
             target_visible = torch.stack([torch.tensor(t["visible"]) for t in targets])
             target_visible[target_visible != 0] = 1
 
-            # draw_heatmap(images_l_ori,target_heatmaps,t_logits_l,num_joints=26)
+            draw_heatmap(images_l_ori,target_heatmaps,t_logits_l,num_joints=26)
 
             # semi-supervise 硬伪标签
             coords, tea_u_confidence = get_max_preds(t_logits_u)
             tea_u_confidence = (tea_u_confidence > 0.3).float().squeeze(-1)
             tea_pseudo_labels = generate_heatmap(coords, tea_u_confidence.cpu()).cuda()
 
-            draw_heatmap(images_u_ori,tea_pseudo_labels,s_logits_u,num_joints=26)
+            # draw_heatmap(images_u_ori,tea_pseudo_labels,s_logits_u,num_joints=26)
             # draw_heatmap(images_u_ori,s_logits_u,tea_pseudo_labels,num_joints=26)
 
 
@@ -640,23 +640,23 @@ def draw_heatmap(images,logits_gt,logits_dt,num_joints=21,vis_th=0.2):
 
         ax[0].axis('off')
         # ax[0].set_title('Base Network Output',fontsize=24)
-        ax[0].set_title('Adaptation Network Output',fontsize=24)
+        # ax[0].set_title('Adaptation Network Output',fontsize=24)
         ax[1].axis('off')
-        ax[1].set_title('Pseudo Label',fontsize=24)
+        # ax[1].set_title('Pseudo Label',fontsize=24)
         # ax[1].set_title('Ground Truth',fontsize=24)
         plt.show()
 
-        fig, ax = plt.subplots(1, 2)
-        ax[0].imshow(dt_heatmaps[i], alpha=0.5, cmap='hot')
-        ax[1].imshow(gt_heatmaps[i], alpha=0.5, cmap='hot')
-
-        ax[0].axis('off')
-        # ax[0].set_title('Base Network Output',fontsize=24)
-        ax[0].set_title('Adaptation Network Output',fontsize=24)
-        ax[1].axis('off')
-        ax[1].set_title('Pseudo Label',fontsize=24)
-        # ax[1].set_title('Ground Truth',fontsize=24)
-        plt.show()
+        # fig, ax = plt.subplots(1, 2)
+        # ax[0].imshow(dt_heatmaps[i], alpha=0.5, cmap='hot')
+        # ax[1].imshow(gt_heatmaps[i], alpha=0.5, cmap='hot')
+        #
+        # ax[0].axis('off')
+        # # ax[0].set_title('Base Network Output',fontsize=24)
+        # ax[0].set_title('Adaptation Network Output',fontsize=24)
+        # ax[1].axis('off')
+        # ax[1].set_title('Pseudo Label',fontsize=24)
+        # # ax[1].set_title('Ground Truth',fontsize=24)
+        # plt.show()
 
 
 def ours_ap10k_animalpose(cfg, args, labeled_loader, unlabeled_loader, teacher_model, student_model, t_optimizer,

@@ -24,10 +24,12 @@ def inference():
 
     # Ls / + Lu / +Lf
     weights_path = "saved_weights/ls_lu_lf.pth"
-    weights_path = "saved_weights/29K_mix_SL_best.pth"
-    model = HighResolutionNet(num_joints=26)
+    # weights_path = "saved_weights/29K_mix_best.pth"
+    # model = HighResolutionNet(num_joints=26)
+    model = HighResolutionNet(num_joints=21)
     weights = torch.load(weights_path)
-    model.load_state_dict(weights['model'])
+    # model.load_state_dict(weights['model'])
+    model.load_state_dict(weights)
     model.eval()
     model.to("cuda:0")
 
@@ -51,8 +53,8 @@ def inference():
         confidence = np.array(confidence.squeeze(0).squeeze(-1).cpu())
 
         # 反归一化图像tensor
-        mean = torch.tensor([0.485, 0.456, 0.406])
-        std = torch.tensor([0.229, 0.224, 0.225])
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
         img_tensor = (normalized_image.squeeze(0).cpu() * torch.tensor(std).view(3, 1, 1) + torch.tensor(mean).view(3, 1, 1))
         img_tensor = img_tensor.clamp(0,1)
         # 将图像tensor转换为numpy数组
