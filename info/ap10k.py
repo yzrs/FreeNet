@@ -6,8 +6,7 @@ dataset_info = dict(
         title='AP-10K: A Benchmark for Animal Pose Estimation in the Wild',
         container='35th Conference on Neural Information Processing Systems '
         '(NeurIPS 2021) Track on Datasets and Bench-marks.',
-        year='2021',
-        homepage='https://github.com/AlexTheBad/AP-10K',
+        year='2021'
     ),
     keypoint_info={
         0:

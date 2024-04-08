@@ -6,8 +6,7 @@ dataset_info = dict(
         title='Cross-Domain Adaptation for Animal Pose Estimation',
         container='The IEEE International Conference on '
         'Computer Vision (ICCV)',
-        year='2019',
-        homepage='https://sites.google.com/view/animal-pose/',
+        year='2019'
     ),
     keypoint_info={
         0:
