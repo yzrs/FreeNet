@@ -7,6 +7,7 @@ import json
 import numpy as np
 import torch
 import pprint
+import shutil
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader,SubsetRandomSampler,SequentialSampler
 from train_utils.utils import get_cosine_schedule_with_warmup
@@ -63,8 +64,9 @@ def main(cfg,args):
     train_label_dataset = MixKeypoint(root=data_root,merge_info=train_dataset_info,transform=data_transform['train'],num_joints=21)
     train_unlabel_dataset = MixKeypoint(root=data_root,merge_info=train_dataset_info,transform=data_transform['train'],num_joints=21)
 
-    train_label_dataset.get_kps_num(args)
-    train_label_dataset.sample_few(num_ratio=0.1)
+    # train_label_dataset.get_kps_num(args)
+    train_label_dataset.sample_few(num_ratio=args.sample_ratio)
+    # train_label_dataset.save_img_ids()
     train_unlabel_dataset.eliminate_repeated_data(train_label_dataset.valid_lists)
     train_label_dataset.get_kps_num(args)
     train_unlabel_dataset.get_kps_num(args)
@@ -194,8 +196,10 @@ if __name__ == "__main__":
     parser.add_argument('--data-root', default='../dataset', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default='ap_10k_animal_pose_mix_SL_0.1_hrnet.pth',
+    parser.add_argument('--pretrained-weights-name', default='ap10k_animalpose_mix_sl_0.05.pth',
                         type=str, help='pretrained weights name')
+    parser.add_argument('--sample-ratio', default=0.05, type=float, help='feedback scalar')
+
     parser.add_argument('--output-dir', default='./experiment',type=str, help='output dir depends on the time')
     parser.add_argument('--resume', default=None, type=str, help='path to resume file')
 
@@ -249,6 +253,13 @@ if __name__ == "__main__":
     output_dir = args.output_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+
+    source_file_path = 'ours_ap_10k_animal_pose.py'
+    target_file_path = os.path.join(output_dir, 'ours_ap_10k_animal_pose.py')
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    shutil.copy(source_file_path, target_file_path)
+    print(f"file saved to: {target_file_path}")
 
     info_output_dir = os.path.join(output_dir,'info')
     if not os.path.exists(info_output_dir):
