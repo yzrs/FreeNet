@@ -866,7 +866,7 @@ class MixKeypoint(data.Dataset):
             kps = json.load(f)['keypoints']
         kp_num = [0 for _ in range(self.num_joints)]
         res = {'keypoints': {}}
-        if args.num_joints == 26:
+        if self.num_joints == 24:
             trans = OriginalLabelFormatTrans(extend_flag=True)
         else:
             trans = OriginalLabelFormatTransAP10KAnimalPose(extend_flag=True)
@@ -877,7 +877,6 @@ class MixKeypoint(data.Dataset):
             current_dataset = valid_list['dataset']
             current_mode = valid_list['mode']
             for label in labels:
-                # 应先转换到统一的26个点的模板再进行统计
                 tmp_label = copy.deepcopy(label)
                 tmp_label = trans(tmp_label)
                 vis = tmp_label['visible']
@@ -1062,15 +1061,27 @@ class MixKeypoint(data.Dataset):
     def save_img_ids(self):
         img_ann_ids = {}
         img_ids = []
+
+        ap10k_img_num = 58632
+        ap10k_ann_num = 16561
+        animalpose_img_num = 4608
+        animalpose_ann_num = 6117
+
         for valid_list in self.valid_lists:
             anns = valid_list['annotations']
             cur_dataset = valid_list['dataset']
             if cur_dataset == 'ap_10k':
                 img_id_bias = 0
                 ann_id_bias = 0
+            elif cur_dataset == 'animal_pose':
+                img_id_bias = ap10k_img_num
+                ann_id_bias = ap10k_ann_num
+            elif cur_dataset == 'tigdog':
+                img_id_bias = ap10k_img_num + animalpose_img_num
+                ann_id_bias = ap10k_ann_num + animalpose_ann_num
             else:
-                img_id_bias = 58632
-                ann_id_bias = 16561
+                img_id_bias = 0
+                ann_id_bias = 0
             for ann in anns:
                 cur_img_id = int(ann['image_id'] + img_id_bias)
                 cur_ann_id = int(ann['anno_id'] + ann_id_bias)

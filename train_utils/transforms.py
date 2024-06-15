@@ -619,6 +619,80 @@ class LabelFormatTransAP10KAnimalPose(object):
         target['visible_ori'] = des_vis.copy()
         return image, target
 
+class LabelFormatTransUnion(object):
+    def __init__(self, extend_flag=True):
+        self.extend_flag = extend_flag
+        self.map_info = {'extend': {'ap_10k': {}, 'animal_pose': {}, 'tigdog':{}},
+                         'shrink': {'ap_10k': {}, 'animal_pose': {}, 'tigdog':{}}
+                         }
+        # [ap_10k,mixed]
+        ap_10k_map = [[0,0],[1,1],[2,2],[3,3],[4,4],
+                    [5,5],[6,6],[7,7],[8,8],
+                    [9,9],[10,10],[11,11],[12,12],
+                    [13,13],[14,14],[15,15],[16,16]]
+        animal_pose_map = [[0,0],[1,1],[2,2],[3,17],[4,18],
+                         [5,5],[6,8],[7,11],[8,14],
+                         [9,6],[10,9],[11,12],[12,15],
+                         [13,7],[14,10],[15,13],[16,16],
+                         [17,19],[18,20],[19,4]]
+        tigdog_map = [[0,0],[1,1],[2,21],
+                    [3,7],[4,10],[5,13],[6,16],
+                    [7,4],
+                    [8,6],[9,9],[10,12],[11,15],
+                    [12,22],[13,23],
+                    [14,5],[15,8],[16,11],[17,14],
+                    [18,3]]
+
+        for lis in ap_10k_map:
+            k, v = lis
+            self.map_info['extend']['ap_10k'][k] = v
+            self.map_info['shrink']['ap_10k'][v] = k
+        for lis in animal_pose_map:
+            k, v = lis
+            self.map_info['extend']['animal_pose'][k] = v
+            self.map_info['shrink']['animal_pose'][v] = k
+        for lis in tigdog_map:
+            k, v = lis
+            self.map_info['extend']['tigdog'][k] = v
+            self.map_info['shrink']['tigdog'][v] = k
+
+    def __call__(self, image, target):
+        kps = target['keypoints'].copy()
+        vis = target['visible'].copy()
+
+        # src dataset -> mix dataset
+        if self.extend_flag:
+            num = 24
+            des_kps = np.zeros((num, 2))
+            des_vis = np.zeros(num)
+            map_info = self.map_info['extend'][target['dataset']]
+            for key in map_info:
+                val = map_info[key]
+                des_kps[val] = kps[key]
+                des_vis[val] = vis[key]
+            if np.count_nonzero(des_vis) != np.count_nonzero(vis):
+                print("error vis value")
+
+        # mix dataset -> src dataset
+        else:
+            if target['dataset'] == 'ap_10k':
+                num = 17
+            elif target['dataset'] == 'animal_pose':
+                num = 20
+            elif target['dataset'] == 'tigdog':
+                num = 19
+            des_kps = np.zeros((num, 2))
+            des_vis = np.zeros(num)
+            map_info = self.map_info['shrink'][target['dataset']]
+            for key in map_info:
+                val = map_info[key]
+                des_kps[val] = kps[key]
+                des_vis[val] = kps[key]
+        target['keypoints'] = des_kps.copy()
+        target['keypoints_ori'] = des_kps.copy()
+        target['visible'] = des_vis.copy()
+        target['visible_ori'] = des_vis.copy()
+        return image, target
 
 # (17,3)->(51,)
 class OnlyLabelFormatTrans(object):
@@ -759,21 +833,25 @@ class OnlyLabelFormatTransAP10KAnimalPose(object):
 class OriginalLabelFormatTrans(object):
     def __init__(self, extend_flag=True):
         self.extend_flag = extend_flag
-        self.map_info = {'extend': {'ap_10k': {}, 'animal_pose': {}, "tigdog_horse":{},"tigdog_tiger":{}},
-                         'shrink': {'ap_10k': {}, 'animal_pose': {}, "tigdog_horse":{},"tigdog_tiger":{}}
+        self.map_info = {'extend': {'ap_10k': {}, 'animal_pose': {}, "tigdog":{}},
+                         'shrink': {'ap_10k': {}, 'animal_pose': {}, "tigdog":{}}
                          }
         # [ap_10k,mixed]
-        ap_10k_map = [[0, 0], [1, 1], [2, 4], [3, 8], [4, 25], [5, 11], [6, 15], [7, 21],
-                      [8, 12], [9, 16], [10, 22], [11, 13], [12, 17], [13, 23], [14, 14], [15, 18], [16, 24]]
-        animal_pose_map = [[0, 0], [1, 1], [2, 4], [3, 2], [4, 3], [5, 11], [6, 12], [7, 13],
-                           [8, 14], [9, 15], [10, 16], [11, 17], [12, 18], [13, 21], [14, 22], [15, 23],
-                           [16, 24], [17, 6], [18, 7], [19, 25]]
-        tigdog_horse_map = [[0, 0], [1, 1], [2, 5], [3, 21], [4, 22], [5, 23], [6, 24], [7, 25],
-                            [8, 15], [9, 16], [10, 17], [11, 18], [12, 9], [13, 10], [14, 11], [15, 12],
-                            [16, 13], [17, 14], [18, 8]]
-        tigdog_tiger_map = [[0, 0], [1, 1], [2, 5], [3, 21], [4, 22], [5, 23], [6, 24], [7, 25],
-                            [8, 19], [9, 20], [10, 17], [11, 18], [12, 9], [13, 10], [14, 11], [15, 12],
-                            [16, 13], [17, 14], [18, 8]]
+        ap_10k_map = [[0, 0], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 7],
+                      [8, 8], [9, 9], [10, 10], [11, 11], [12, 12], [13, 13], [14, 14], [15, 15], [16, 16]]
+        animal_pose_map = [[0,0],[1,1],[2,2],[3,17],[4,18],
+                         [5,5],[6,8],[7,11],[8,14],
+                         [9,6],[10,9],[11,12],[12,15],
+                         [13,7],[14,10],[15,13],[16,16],
+                         [17,19],[18,20],[19,4]]
+        tigdog_map = [[0,0],[1,1],[2,21],
+                    [3,7],[4,10],[5,13],[6,16],
+                    [7,4],
+                    [8,6],[9,9],[10,12],[11,15],
+                    [12,22],[13,23],
+                    [14,5],[15,8],[16,11],[17,14],
+                    [18,3]]
+
         for lis in ap_10k_map:
             k, v = lis
             self.map_info['extend']['ap_10k'][k] = v
@@ -782,23 +860,19 @@ class OriginalLabelFormatTrans(object):
             k, v = lis
             self.map_info['extend']['animal_pose'][k] = v
             self.map_info['shrink']['animal_pose'][v] = k
-        for lis in tigdog_horse_map:
+        for lis in tigdog_map:
             k, v = lis
-            self.map_info['extend']['tigdog_horse'][k] = v
-            self.map_info['shrink']['tigdog_horse'][v] = k
-        for lis in tigdog_tiger_map:
-            k, v = lis
-            self.map_info['extend']['tigdog_tiger'][k] = v
-            self.map_info['shrink']['tigdog_tiger'][v] = k
+            self.map_info['extend']['tigdog'][k] = v
+            self.map_info['shrink']['tigdog'][v] = k
 
-    # (17,2)->(26,2)
-    # (17)->(26)
+    # (17,2)->(24,2)
+    # (17)->(24)
     def __call__(self, target):
         vis = target['visible'].copy()
         kps = target['keypoints'].copy()
         # src dataset -> mix dataset
         if self.extend_flag:
-            num = 26
+            num = 24
             des_kps = np.zeros((num, 2))
             des_vis = np.zeros(num)
             map_info = self.map_info['extend'][target['dataset']]
@@ -814,7 +888,7 @@ class OriginalLabelFormatTrans(object):
                 num = 17
             elif target['dataset'] == 'animal_pose':
                 num = 20
-            elif target['dataset'] == 'tigdog_horse' or target['dataset'] == 'tigdog_tiger':
+            elif target['dataset'] == 'tigdog':
                 num = 19
             des_kps = np.zeros((num, 2))
             des_vis = np.zeros(num)

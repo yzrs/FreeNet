@@ -10,3 +10,5 @@ from .ap10k_test_category import AnimalAP10KDataset as ap10k_test_category
 from .ap10k_animalpose import AP10KAnimalPoseDataset as ap10k_animalpose
 from .ap10k_animalpose_mt import AnimalAP10KMTDataset as ap10k_animalpose_mt
 from .ap10k_animalpose_fewshot import AP10KAnimalPoseDataset as ap10k_animalpose_fewshot
+from .ap10k_animalpose_tigdog import AP10KAnimalTigDogPoseDataset as ap10k_animalpose_tigdog
+from .ap10k_animalpose_tigdog_fewshot import AP10KAnimalTigDogPoseDataset as ap10k_animalpose_tigdog_fewshot
