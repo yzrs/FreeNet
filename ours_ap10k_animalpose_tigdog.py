@@ -86,14 +86,14 @@ def main(cfg,args):
     stu_checkpoint = torch.load(stu_pretrained_weights_path)
     tea_checkpoint = torch.load(tea_pretrained_weights_path)
 
-    # attr_flag = False
-    # for key in ['state_dict','model','student_model','directly']:
-    #     if key in tea_checkpoint:
-    #         t_model.load_state_dict(tea_checkpoint[key])
-    #         attr_flag = True
-    #         break
-    # if not attr_flag:
-    #     t_model.load_state_dict(tea_checkpoint)
+    attr_flag = False
+    for key in ['state_dict','model','student_model','directly']:
+        if key in tea_checkpoint:
+            t_model.load_state_dict(tea_checkpoint[key])
+            attr_flag = True
+            break
+    if not attr_flag:
+        t_model.load_state_dict(tea_checkpoint)
 
     s_model = HighResolutionNet(num_joints=args.num_joints)
     s_model.load_state_dict(stu_checkpoint,strict=False)
