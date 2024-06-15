@@ -1079,7 +1079,14 @@ def ours_ap10k_animalpose_tigdog(cfg, args, labeled_loader, unlabeled_loader, te
         pbar.update()
 
         # evaluate
-        if (step + 1) % args.eval_step == 0:
+        if step < 15000:
+            eval_step = 600
+        elif step < 30000:
+            eval_step = 300
+        else:
+            eval_step = args.eval_step
+
+        if (step + 1) % eval_step == 0:
             train_loss = {'Stu_Loss': s_losses.avg, 'Tea_Loss': t_losses.avg}
             kp_num = {'Head_PL':part_kp_num[0],'Front_PL':part_kp_num[1],'Back_PL':part_kp_num[2]}
             part_kp_num = [0,0,0]
@@ -2353,7 +2360,7 @@ def eval_from_scarcenet_union(cfg, model, output_dir):
     # define loss function (criterion) and optimizer
     criterion = JointsMSELoss(use_target_weight=True).cuda()
 
-    valid_dataset = dataset_animal.ap10k_animalpose_tigdog(
+    valid_dataset = dataset_animal.ap10k_animalpose_tigdog_fewshot(
         cfg, cfg.DATASET.ROOT, cfg.DATASET.VAL_SET, False,
         tf.Compose([
             tf.ToTensor(),

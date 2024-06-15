@@ -259,7 +259,7 @@ class AP10KAnimalTigDogPoseDataset(Kpt2dSviewRgbImgTopDownDataset):
         for idx, kpt in enumerate(preds):
             # Error!
             # image_name = img_path[idx][-16:]
-            image_name = os.path.basename(img_path[idx])
+            image_name = img_path[idx]
             image_id = self.name2id[image_name]
             bbox_id = int(all_boxes[idx][6])
             cat = self.id2Cat[image_id][bbox_id]['category']
