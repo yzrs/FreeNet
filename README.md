@@ -107,24 +107,24 @@ pip install -r requirments.txt
 
 ### Train on Synthetic Datasets Derived from AP-10k
 
-| Model | Shared Joint Size |  mAP  |  PCK  | Pretrained Weights | Download |
-| :---: | :---------------: | :---: | :---: | :----------------: | :------: |
-| Ours  |         5         | 72.70 | 80.57 |    [weights]()     | model_1  |
-| Ours  |         9         | 74.20 | 82.50 |    [weights]()     | model_2  |
+| Model | Shared Joint Size |  mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
+| :---: | :---------------: | :---: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+| Ours  |         5         | 72.70 | 80.57 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/ours_synthetic_ap10k_share_5.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_synthetic_ap10k_share_5.pth) |
+| Ours  |         9         | 74.20 | 82.50 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/ours_synthetic_ap10k_share_9.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_synthetic_ap10k_share_9.pth) |
 
 ### Train on Three Synthesized Non-standard Datasets
 
 Tips: These datasets are modified from  “25 images per species” setting of ScarceNet.
 
-| Model | mAP  |  PCK  | Pretrained Weights | Download |
-| :---: | :--: | :---: | :----------------: | :------: |
-| Ours  | 57.9 | 68.31 |    [weights]()     | model_3  |
+| Model | mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
+| :---: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+| Ours  | 57.9 | 68.31 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/25_5_imgs_SL_hrnet_pretrained.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_25_5_ips_model.pth) |
 
 ### Train on 10% combined AP-10k and AnimalPose
 
-| Model | mAP  |  PCK  | Pretrained Weights | Download |
-| :---: | :--: | :---: | :----------------: | :------: |
-| Ours  | 57.5 | 71.28 |    [weights]()     | model_4  |
+| Model | mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
+| :---: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+| Ours  | 57.5 | 71.28 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/ap_10k_animal_pose_mix_SL_0.1_hrnet.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_0.1_ap10k_animalpose.pth) |
 
 ## Inference Demo
 
