@@ -4,3 +4,4 @@ pretrained_weights/
 /saved_weights/
 /resources/pretrained_weights/
 /resources/result_models/
+*.pyc
