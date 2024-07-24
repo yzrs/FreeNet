@@ -131,7 +131,6 @@ class CocoKeypoint(data.Dataset):
         del self.imgs_without_labels
 
     def __getitem__(self, index):
-        # 根据自定义的索引顺序读取数据
         target = copy.deepcopy(self.valid_list[index])
 
         image = cv2.imread(target["image_path"])
@@ -153,7 +152,6 @@ class CocoKeypoint(data.Dataset):
     def get_kps_num(self, args):
         # now = datetime.datetime.now()
         # now_time = now.strftime('%Y-%m_%d_%H-%M-%S')
-        # 统计每个点对应的数量，并保存其信息到本地的statistics文件中
         # write_path = f"./statistics_file/num_results/{self.dataset}_{self.mode}_{lamda}_kp_num_{now_time}.json"
         kp_num = [0 for _ in range(self.num_joints)]
         for label in self.valid_list:
@@ -237,7 +235,6 @@ class CocoKeypoint(data.Dataset):
                 # Pause and wait for another key press
                 cv2.waitKey(0)
 
-    # 输入需要屏蔽的关键点对应的索引
     def block_specific_kp(self, args, kp_index):
         if len(kp_index) > 0:
             for ann in self.valid_list:
@@ -277,7 +274,6 @@ class CocoKeypoint(data.Dataset):
                 anns_ids_set.add(ann['id'])
         self.sample_anns_by_id(anns_ids_set)
 
-    # 只是根据点的数量去选取，没有考虑动物种类的问题
     def get_qualified_few_shot(self,num,num_lambda=0.8):
         ids_set_path = f"info/{self.dataset}_few_shot_id_path_{num}.json"
         if not os.path.exists(ids_set_path):
@@ -300,7 +296,6 @@ class CocoKeypoint(data.Dataset):
 
         self.valid_list = [ann for ann in self.valid_list if ann['anno_id'] in valid_ids_set]
 
-    # 根据点的数量和动物的种类去选取few_shot
     def get_qualified_balanced_few_shot(self,args,num_per_species):
         ids_set_path = f"info/{self.dataset}_balanced_few_shot_id_path_{num_per_species}.json"
         if not os.path.exists(ids_set_path):
@@ -382,7 +377,6 @@ class CocoKeypoint(data.Dataset):
     def load_missing_anns(self,path):
         with open(path,'r') as f:
             anns_info = json.load(f)
-        #  建立一个索引字典 去找img_id
         imgId2annIndex = {}
         for i,ann in enumerate(self.valid_list):
             img_id = ann['image_id']
@@ -538,13 +532,10 @@ class MixKeypoint(data.Dataset):
             total_length += length
         return total_length
 
-    # 从数据集中随机选择一定数量的注释作为新的数据集 7000/1000/500/500
     def get_valid_ann(self, args):
         selected_info_path = args.selected_info_path
         selected_lists = self.valid_lists.copy()
         if not os.path.exists(selected_info_path):
-            # 将随机选择的ids保存在selected_info中
-            # 更新dataset中相关信息
             selected_info = []
             for dataset_index, ls in enumerate(selected_lists):
                 selected_num = 1
@@ -591,7 +582,6 @@ class MixKeypoint(data.Dataset):
                                 current_id_set.add(one_id)
                         break
 
-                # 过滤注释列表
                 current_anns = [ann for ann in current_anns if ann['anno_id'] in current_id_set]
                 ls['annotations'] = current_anns
 
@@ -603,7 +593,6 @@ class MixKeypoint(data.Dataset):
                 self.length_list[dataset_index] = anno_num
                 self.dataset_infos[dataset_index]['length'] = anno_num
 
-    # 必须在get_valid_ann之后使用
     def get_invalid_ann(self, args):
         selected_info_path = args.selected_info_path
         selected_lists = self.valid_lists.copy()
@@ -624,7 +613,6 @@ class MixKeypoint(data.Dataset):
                             current_id_set.add(one_id)
                     break
 
-            # 过滤注释列表
             current_anns = [ann for ann in current_anns if ann['anno_id'] not in current_id_set]
             for ann in current_anns:
                 num_joint = ann['visible_ori'].shape[0]
@@ -639,14 +627,10 @@ class MixKeypoint(data.Dataset):
             self.length_list[dataset_index] = anno_num
             self.dataset_infos[dataset_index]['length'] = anno_num
 
-    # 均匀点采样实验函数
-    # 为每个语义点，从数据集中选出sample num个注释
-    # 返回一个(anno_num,26)的列表，表示数据集中所有的可见性的值
     def __keypoint_sample(self, args):
         selected_vis_path = args.selected_vis_path
         all_vis = []
         print("visibility processing")
-        # vis处理为每个semantic keypoint只有3000个点
         if not os.path.exists(selected_vis_path):
             func = OriginalLabelFormatTrans(extend_flag=True)
             print("random visibility generating")
@@ -660,12 +644,9 @@ class MixKeypoint(data.Dataset):
 
             # counting for every semantic keypoint
             counts = [0] * 26
-            # 统计每个部位可见性为1的数量
             for vis in all_vis:
                 counts = [x + y for x, y in zip(vis, counts)]
-            # 计算每个部位可见性为1的点需要减少的数量
             reduction_counts = [count - args.sample_num for count in counts]
-            # 随机将vis置0而不是按照顺序
             sequence = list(range(self.anno_num))
             random.shuffle(sequence)
             for sequence_id in sequence:
@@ -685,18 +666,14 @@ class MixKeypoint(data.Dataset):
             all_vis = sample_vis_data['vis']
         return all_vis
 
-    # 根据keypoint_sample返回的所有注释的可见性的值更新数据集的valid_lists
     def __update_vis(self, args, all_vis):
         # all_vis now is anno_num * 26
         # change the vis value in self.valid_lists
-        # 将新的vis值写回数据集的valid_lists
         reverse_func = NoLabelFormatTrans(extend_flag=False)
         for index, single_vis in enumerate(all_vis):
             inner_index = copy.deepcopy(index)
             for i, length in enumerate(self.length_list):
-                # 判断inner_index对应的anno属于哪个dataset
                 if inner_index <= length - 1:
-                    # 将(26,)转换回原本的格式
                     current_dataset = self.dataset_infos[i]['dataset']
                     current_vis = reverse_func(single_vis, dataset=current_dataset)
                     current_vis = [int(x) for x in current_vis]
@@ -706,7 +683,6 @@ class MixKeypoint(data.Dataset):
                     inner_index -= length
         print("visibility wrote back done")
 
-    # 根据keypoint_sample返回的所有注释的可见性的值，消除数据集中可见性值全为0的注释
     def __valid_ids_get(self, args, all_vis):
         print("generating valid ids")
         res_info = []
@@ -714,7 +690,6 @@ class MixKeypoint(data.Dataset):
             # throw the labels without valid keypoints
             # valid ids for every dataset
             valid_ids = [[] for i in range(len(self.dataset_infos))]
-            # 将all_vis分成几个部分
             all_split_vis = []
             start_index = 0
             end_index = 0
@@ -757,7 +732,6 @@ class MixKeypoint(data.Dataset):
                         if one_id not in current_id_set:
                             current_id_set.add(one_id)
                     break
-            # 过滤注释列表
             current_anns = [ann for ann in current_anns if ann['anno_id'] in current_id_set]
             ls['annotations'] = current_anns
 
@@ -786,7 +760,6 @@ class MixKeypoint(data.Dataset):
                         if one_id not in current_id_set:
                             current_id_set.add(one_id)
                     break
-            # 过滤注释列表
             current_anns = [ann for ann in current_anns if ann['anno_id'] not in current_id_set]
             ls['annotations'] = current_anns
 
@@ -817,7 +790,6 @@ class MixKeypoint(data.Dataset):
             num = int(len(valid_anns) * num_lamda)
             val_list = random.sample(valid_anns, num)
             valid_list['annotations'] = val_list
-            # 更新相关的信息
             self.valid_lists[list_index]['length'] = num
             self.anno_num = self.anno_num - self.length_list[list_index] + num
             self.length_list[list_index] = num
@@ -825,9 +797,8 @@ class MixKeypoint(data.Dataset):
         self.get_kps_num(args, num_lamda)
 
     def sample_few(self,num_ratio=0.1):
-        select_num = int(self.anno_num * num_ratio)  # 计算要生成的随机索引数量
-        random_indices = random.sample(range(self.anno_num), select_num)  # 从0到anno_num-1的范围生成指定数量的随机索引
-        # 将整体的index转换成局部数据集的index
+        select_num = int(self.anno_num * num_ratio)
+        random_indices = random.sample(range(self.anno_num), select_num)
         local_indices = [[] for _ in range(len(self.valid_lists))]
         for index in random_indices:
             tmp_index = index
@@ -853,7 +824,6 @@ class MixKeypoint(data.Dataset):
                 num = int(len(valid_anns) * num_lamda)
                 val_list = random.sample(valid_anns, num)
                 valid_list['annotations'] = val_list
-                # 更新相关的信息
                 self.valid_lists[list_index]['length'] = num
                 self.anno_num = self.anno_num - self.length_list[list_index] + num
                 self.length_list[list_index] = num
@@ -861,7 +831,6 @@ class MixKeypoint(data.Dataset):
         self.get_kps_num(args, num_lamda)
 
     def get_kps_num(self, args):
-        # 统计每个点对应的数量，并保存其信息到本地的statistics文件中
         with open(args.keypoints_path) as f:
             kps = json.load(f)['keypoints']
         kp_num = [0 for _ in range(self.num_joints)]
@@ -895,16 +864,11 @@ class MixKeypoint(data.Dataset):
         # with open(write_path, 'w') as f:
         #     json.dump(res, f, indent=4)
 
-    # 使merge后某一点的数量保持不变。 5 + 7 = 12 保持不变则从merge后的12个里面随机选5
-    # 但如果是 10 + 90 = 100 随机选10...
-    # 可以对不同混合比例进行对比 完全随机 / 2 : 1 / 1 : 1 / 1 : 2
     def __mix_kps_num_get(self, args):
         num_mix = [0] * 26
         # map to 26
         with open(args.keypoints_path, 'r') as f:
             mix_definition = json.load(f)
-        # 统计合并后每个点的数量 num_mix
-        # 对于关注的点，随机抹去其有效点的可见性
         for single_dataset_index, single_dataset in enumerate(self.dataset_infos):
             current_dataset = single_dataset['dataset']
             current_mode = single_dataset['mode']
@@ -923,7 +887,6 @@ class MixKeypoint(data.Dataset):
                     vis = kps[2::3]
                     num_tmp = [1 if vi > 0 else 0 for vi in vis]
                     current_num = [a + b for a, b in zip(current_num, num_tmp)]
-            # 将当前数据集的点的数量映射到mix的格式上
             for pair in map_info:
                 k, v = pair
                 num_mix[v] += current_num[k]
@@ -932,8 +895,6 @@ class MixKeypoint(data.Dataset):
             print(current_num)
         return num_mix
 
-    # 随机抹掉指定数量制定点的可见性值为0
-    # 有23个注释在经过目标关键点的可见性抹去之后变成了无效注释
     def __invalid_ids_get(self, args, kps_num, index_list, num_list):
         with open(args.keypoints_path, 'r') as f:
             mix_definition = json.load(f)
@@ -949,8 +910,6 @@ class MixKeypoint(data.Dataset):
         for info in self.dataset_infos:
             invalid_dict[info['dataset']] = {info['mode']: []}
 
-        # 找到对应的数据 如果指定点可见性为1，将其设为0
-        # 有的数据可能变成无效ann,注意更新数据集的信息
         for single_id in ids:
             for i, length in enumerate(self.length_list):
                 if single_id <= length - 1:
@@ -958,7 +917,6 @@ class MixKeypoint(data.Dataset):
                     dataset = self.valid_lists[i]['dataset']
                     mode = self.valid_lists[i]['mode']
                     map_info = mix_definition[dataset]['map']
-                    # 将26点定义为基础的index_list转换为对应的index (17,19,20)
                     swapped_map_info = [[y, x] for x, y in map_info]
                     tmp_index = []
                     for mix_index in index_list:
@@ -1006,15 +964,12 @@ class MixKeypoint(data.Dataset):
             self.valid_lists[list_index]['annotations'] = anns
         self.__update_info()
 
-    # unlabel dataset根据label dataset去除部分重叠数据
     def eliminate_repeated_data(self,label_valid_lists):
-        # 收集label dataset中数据的id
         idxs = [[] for _ in range(len(label_valid_lists))]
         for list_index,valid_list in enumerate(label_valid_lists):
             anns = valid_list['annotations']
             for ann in anns:
                 idxs[list_index].append(ann['anno_id'])
-        # 根据 label dataset的标签id消除Unlabel dataset中重复的注释
         for ids,valid_list in zip(idxs,self.valid_lists):
             anns = valid_list['annotations']
             anns = [ann for ann in anns if ann['anno_id'] not in ids]
@@ -1160,87 +1115,3 @@ class MixKeypoint(data.Dataset):
         aug_imgs_tensor = torch.stack(aug_imgs)
         return (ori_imgs_tensor,aug_imgs_tensor), targets_list
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        description=__doc__)
-    parser.add_argument('--keypoints-path', default="./info/ap_10k_animal_pose_union_keypoints_format.json", type=str,
-                        help='keypoints_format.json path')
-    parser.add_argument('--fixed-size', default=[256, 256], nargs='+', type=int, help='input size')
-    parser.add_argument('--num-joints', default=21, type=int, help='num_joints')
-
-    parser.add_argument('--seed', default=2, type=int, help='seed for initializing training')
-    args = parser.parse_args()
-
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed_all(args.seed)
-
-    with open(args.keypoints_path, "r") as f:
-        animal_kps_info = json.load(f)
-    fixed_size = args.fixed_size
-    heatmap_hw = (args.fixed_size[0] // 4, args.fixed_size[1] // 4)
-    kps_weights = np.array(animal_kps_info["kps_weights"],
-                           dtype=np.float32).reshape((args.num_joints,))
-
-    data_transform = {
-        "train": transforms.Compose([
-            transforms.LabelFormatTrans(extend_flag=True),
-            transforms.TransformMPL(args, mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ]),
-        "val": transforms.Compose([
-            transforms.LabelFormatTrans(extend_flag=True),
-            transforms.AffineTransform(scale=None, rotation=None, fixed_size=fixed_size),
-            transforms.KeypointToHeatMap(heatmap_hw=heatmap_hw, gaussian_sigma=2, keypoints_weights=kps_weights),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        ])
-    }
-    train_dataset_info = [{"dataset":"ap_10k","mode":"train"},{"dataset":"animal_pose","mode":"train"}]
-    train_label_dataset = MixKeypoint(root='../../dataset', merge_info=train_dataset_info, transform=data_transform['train'])
-
-    train_label_dataset.sample_animal_few_shot(sample_num=[4,3])
-    shared_animal_indices = [5,6,8,21,24]
-    train_label_dataset.eliminate_specific_animals(dataset_index=0,animal_indices=shared_animal_indices,save_num=1)
-    train_label_dataset.get_kps_num(args)
-    train_label_dataset.save_img_ids()
-    print('debug')
-    # train_label_dataset.sample_few(num_ratio=0.02)
-    # train_label_dataset.get_kps_num(args)
-    # train_label_dataset.save_img_ids()
-    # index_list = [0,1]
-    # num_list = [1000,1000]
-    # train_dataset.get_kps_num(args,1)
-    # train_dataset.specific_kp_sample(args,index_list,num_list)
-    # train_dataset.get_kps_num(args,2)
-
-    # data_root = "../dataset"
-    # dataset = 'ap_10k'
-    # label_data_root = os.path.join(data_root, dataset)
-    # train_dataset = CocoKeypoint(root=label_data_root, dataset=dataset, mode="train",transform=None, fixed_size=None,
-    #                              data_type="keypoints")
-    # # train_dataset.sample_anns_by_imgs_ids_file(path='./info/label_list/annotation_list_20.json')
-    # train_dataset.get_qualified_balanced_few_shot(num_per_species=20)
-    # print('debug')
-
-    # train_dataset.get_avg_animals(20)
-    # train_dataset.animal_category_num()
-    # print('debug')
-    # train_dataset_a = CocoKeypoint(root=label_data_root, dataset=dataset, mode="train",
-    #                                transform=None, fixed_size=None, data_type="keypoints")
-    # train_dataset_b = CocoKeypoint(root=label_data_root, dataset=dataset, mode="train",
-    #                                transform=None, fixed_size=None, data_type="keypoints")
-    # train_dataset_a.animal_category_num()
-    # train_dataset_a.get_qualified_few_shot(num=912)
-    # train_dataset_a.animal_category_num()
-    # train_dataset_b.sample_few(args)
-    # train_dataset_b.animal_category_num()
-    # train_dataset.animal_avg_keypoint_num()
-    # train_dataset.animal_gt_show(animal_category=None)
-    # kp_index_list = [0,1]
-    # train_dataset.block_specific_kp(args,kp_index_list)
-    # label_data_root = "../dataset/tigdog"
-    # train_dataset = CocoKeypoint(root=label_data_root, dataset="tigdog", mode="train",
-    #                              transform=None,fixed_size=None, data_type="keypoints")
-    # train_dataset.animal_gt_show(animal_category='horse')

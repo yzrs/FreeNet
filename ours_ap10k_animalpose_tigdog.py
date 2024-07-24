@@ -198,7 +198,7 @@ if __name__ == "__main__":
     parser.add_argument('--data-root', default='../dataset', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default=None,
+    parser.add_argument('--pretrained-weights-name', default='union_sl_0l.1.pth',
                         type=str, help='pretrained weights name')
     parser.add_argument('--sample-ratio', default=0.1, type=float, help='feedback scalar')
 
