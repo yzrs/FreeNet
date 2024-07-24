@@ -60,26 +60,26 @@ Then arrange your dataset directory as follows:
         - 1.jpg
         - 2.jpg
         - ...
-	- ap10k_animalpose
-		- annotations
-        - data
-          - 1.jpg
-          - 2.jpg
-          - ...
-    - ap10k_animalpose_tigdog
-		- annotations
-        - data
-          - 1.jpg
-          - 2.jpg
-          - ...
-          - horse
-            - 1.jpg
-            - 2.jpg
-            - ...
-          - tiger
-            - 1.jpg
-            - 2.jpg
-            - ...
+  - ap10k_animalpose
+    - annotations
+    - data
+      - 1.jpg
+      - 2.jpg
+      - ...
+  - ap10k_animalpose_tigdog
+    - annotations
+    - data
+      - 1.jpg
+      - 2.jpg
+      - ...
+      - horse
+        - 1.jpg
+        - 2.jpg
+        - ...
+      - tiger
+        - 1.jpg
+        - 2.jpg
+        - ...
 - freenet
 ```
 
