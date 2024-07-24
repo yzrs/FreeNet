@@ -256,8 +256,8 @@ if __name__ == "__main__":
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    source_file_path = 'ours_ap_10k_animal_pose.py'
-    target_file_path = os.path.join(output_dir, 'ours_ap_10k_animal_pose.py')
+    source_file_path = 'ours_ap_10k_animalpose_tigdog.py'
+    target_file_path = os.path.join(output_dir, 'ours_ap_10k_animalpose_tigdog.py')
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     shutil.copy(source_file_path, target_file_path)
