@@ -37,49 +37,41 @@ Then arrange your dataset directory as follows:
 
 ```
 - Dataset
-  - ap_10k
-    - annotations
-    - data
-      - 1.jpg
-      - 2.jpg
-      - ...
-  - animal_pose
-    - annotations
-    - data
-      - 1.jpg
-      - 2.jpg
-      - ...
-  - tigdog
-    - annotations
-    - data
-      - horse
-        - 1.jpg
-        - 2.jpg
-        - ...
-      - tiger
-        - 1.jpg
-        - 2.jpg
-        - ...
-  - ap10k_animalpose
-    - annotations
-    - data
-      - 1.jpg
-      - 2.jpg
-      - ...
-  - ap10k_animalpose_tigdog
-    - annotations
-    - data
-      - 1.jpg
-      - 2.jpg
-      - ...
-      - horse
-        - 1.jpg
-        - 2.jpg
-        - ...
-      - tiger
-        - 1.jpg
-        - 2.jpg
-        - ...
+	- ap_10k
+		- annotations
+        - data
+            - 1.jpg
+            - ...
+	- animal_pose
+		- annotations
+        - data
+            - 1.jpg
+            - ...
+	- tigdog
+        - annotations
+        - data
+            - horse
+                - 1.jpg
+                - ...
+            - tiger
+                - 1.jpg
+                - ...
+	- ap10k_animalpose
+        - annotations
+        - data
+            - 1.jpg
+            - ...
+    - ap10k_animalpose_tigdog
+        - annotations
+        - data
+            - 1.jpg
+            - ...
+            - horse
+                - 1.jpg
+                - ...
+            - tiger
+                - 1.jpg
+                - ...
 - freenet
 ```
 
@@ -219,34 +211,24 @@ For evaluation on AP-10k:
 
 ```shell
 python eval_ap10k.py \
-	--cfg \
-    outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml \
+    --cfg outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml \
     --animalpose \
-    OUTPUT_DIR \
-    output/test \
-    TEST.MODEL_FILE \
-    path_to_your_model \
-    MODEL.NAME \
-    pose_hrnet \
-    GPUS \
-    [0,]
+	OUTPUT_DIR output/test \
+    TEST.MODEL_FILE path_to_your_model \
+    MODEL.NAME pose_hrnet \
+    GPUS [0,]
 ```
 
 For evaluation on AP-10k + AnimalPose
 
 ```shell
 python eval_ap10k_animalpose.py \
-	--cfg \
-    outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k_animalpose.yaml \
+    --cfg outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k_animalpose.yaml \
     --animalpose \
-    OUTPUT_DIR \
-    output/test \
-    TEST.MODEL_FILE \
-    path_to_your_model \
-    MODEL.NAME \
-    pose_hrnet \
-    GPUS \
-    [0,]
+    OUTPUT_DIR output/test \
+    TEST.MODEL_FILE path_to_your_model \
+    MODEL.NAME pose_hrnet \
+    GPUS [0,]
 ```
 
 ## Acknowledgements
