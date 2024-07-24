@@ -27,9 +27,7 @@ def set_seed(args):
 
 
 def main(cfg,args):
-    # 将args转换为字典
     args_dict = vars(args)
-    # 打印参数值
     logger.info('Args: %s', args_dict)
 
     if args.seed is not None:
@@ -127,7 +125,6 @@ def main(cfg,args):
     t_scaler = torch.cuda.amp.GradScaler() if args.amp else None
     s_scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
-    # learning rate scheduler
     t_scheduler = get_cosine_schedule_with_warmup(t_optimizer,
                                                   args.warmup_steps,
                                                   args.total_steps)
@@ -213,28 +210,22 @@ if __name__ == "__main__":
     parser.add_argument('--feedback-steps-complete', default=6000, type=float, help='warmup steps of feedback')
     parser.add_argument('--feedback-weight', default=2, type=float, help='feedback scalar')
 
-    # 学习率
     parser.add_argument('--teacher_lr', default=1e-5, type=float,
                         help='initial learning rate, 1e-5 is the default value for training')
     parser.add_argument('--student_lr', default=1e-3, type=float,
                         help='initial learning rate, 1e-3 is the default value for training')
 
-    # AdamW的weight_decay参数
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,metavar='W',
                         help='weight decay (default: 1e-4)',dest='weight_decay')
     parser.add_argument('--grad-clip', default=1e9, type=float, help='gradient norm clipping')
-    #
     parser.add_argument('--workers', default=8, type=int, help='number of workers for DataLoader')
     parser.add_argument('--batch-size', default=4, type=int, help='batch size of label data')
     parser.add_argument('--mu', default=1, type=int, help='batch size factor of unlabel data ')
     parser.add_argument('--seed', default=2, type=int, help='seed for initializing training')
-    # animal body关键点信息
     parser.add_argument('--keypoints-path', default="./info/ap_10k_keypoints_format.json", type=str,
                         help='keypoints_format.json path')
     parser.add_argument('--fixed-size', default=[256, 256], nargs='+', type=int, help='input size')
-    # keypoints点数
     parser.add_argument('--num-joints', default=17, type=int, help='num_joints')
-    # best info
     parser.add_argument('--best-oks', default=0, type=float,help='best OKS performance during training')
     parser.add_argument('--best-oks-epoch', default=0, type=int,help='best OKS performance Epoch during training')
     parser.add_argument('--best-pck', default=0, type=float,help='best PCK performance during training')
@@ -242,7 +233,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--amp",default=True,action="store_true",
                         help="Use torch.cuda.amp for mixed precision training")
-    # for ScarceNet Test
     parser.add_argument('--cfg',default='./outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
@@ -265,7 +255,7 @@ if __name__ == "__main__":
         os.mkdir(save_weights_output_dir)
 
     gpu_list = args.gpus
-    str_list = [str(num) for num in gpu_list]  # 将数字列表转换为字符串列表
+    str_list = [str(num) for num in gpu_list]
     gpus = ",".join(str_list)
     os.environ["CUDA_VISIBLE_DEVICE"] = gpus
 

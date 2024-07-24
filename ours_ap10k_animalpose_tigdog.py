@@ -198,7 +198,7 @@ if __name__ == "__main__":
     parser.add_argument('--data-root', default='../dataset', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default='ap10k_animalpose_mix_sl_0.05.pth',
+    parser.add_argument('--pretrained-weights-name', default=None,
                         type=str, help='pretrained weights name')
     parser.add_argument('--sample-ratio', default=0.1, type=float, help='feedback scalar')
 

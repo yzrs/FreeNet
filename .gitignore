@@ -2,3 +2,5 @@ experiment/
 pretrained_weights/
 /.idea/
 /saved_weights/
+/resources/pretrained_weights/
+/resources/result_models/

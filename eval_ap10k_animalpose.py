@@ -87,7 +87,7 @@ def main():
         checkpoint = torch.load(cfg.TEST.MODEL_FILE)
 
         load_flag = False
-        for key in ['teacher_model', 'student_model', 'state_dict', 'model', 'directly']:
+        for key in ['student_model', 'state_dict', 'model','teacher_model', 'directly']:
             if key in checkpoint:
                 model.load_state_dict(checkpoint[key], strict=True)
                 load_flag = True

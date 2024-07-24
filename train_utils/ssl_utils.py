@@ -82,8 +82,6 @@ def ours_ap10k_consistency(cfg, args, labeled_loader, unlabeled_loader, teacher_
             labeled_iter = iter(labeled_loader)
             (images_l_weak, images_l_strong), (weak_label_targets, strong_label_targets) = next(labeled_iter)
         except Exception as e:
-            # 处理其他特定异常情况
-            # 可以输出异常信息等
             logger.error("An error occurred:", e)
             return
         try:

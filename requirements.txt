@@ -1,0 +1,9 @@
+tqdm
+tensorboardx
+pillow
+yacs
+xtcocotools
+pycocotools
+opencv-python-headless
+easydict
+json_tricks
