@@ -5,3 +5,4 @@ pretrained_weights/
 /resources/pretrained_weights/
 /resources/result_models/
 *.pyc
+*/__pycache__/
