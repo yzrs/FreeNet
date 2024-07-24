@@ -118,8 +118,7 @@ Tips: These datasets are modified from  “25 images per species” setting of S
 
 | Model | mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
 | :---: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| Ours  |      |       |                         [weights]()                          |                          [model]()                           |
-| Ours  | 57.9 | 68.31 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/25_5_imgs_SL_hrnet_pretrained.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_25_5_ips_model.pth) |
+| Ours  | 57.9 | 68.31 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/pretrained_25_5.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_25_5_ips_model.pth) |
 
 ### Train on 10% combined AP-10k and AnimalPose
 
@@ -224,9 +223,9 @@ python eval_ap10k.py \
     outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml \
     --animalpose \
     OUTPUT_DIR \
-    test \
+    output/test \
     TEST.MODEL_FILE \
-    output/your_model.pth \
+    path_to_your_model \
     MODEL.NAME \
     pose_hrnet \
     GPUS \
@@ -241,9 +240,9 @@ python eval_ap10k_animalpose.py \
     outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k_animalpose.yaml \
     --animalpose \
     OUTPUT_DIR \
-    test \
+    output/test \
     TEST.MODEL_FILE \
-    saved_weights/your_model.pth \
+    path_to_your_model \
     MODEL.NAME \
     pose_hrnet \
     GPUS \
