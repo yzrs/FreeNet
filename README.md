@@ -31,7 +31,7 @@ TigDog dataset could be downloaded [here](http://calvin-vision.net/datasets/tigd
 
 ## Dataset Preparation
 
-The coco-formated annotations of AnimalPose, TigDog and combined dataset are at freenet/resources/annotation_files. 
+The coco-formated annotations of AnimalPose, TigDog and combined dataset are at freenet/resources/annotation_files. ap_10k_train/val/test.json are simply renamed from official files.
 
 Then arrange your dataset directory as follows:
 
