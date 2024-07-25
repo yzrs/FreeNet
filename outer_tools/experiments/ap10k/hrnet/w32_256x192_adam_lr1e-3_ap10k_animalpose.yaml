@@ -5,7 +5,7 @@ CUDNN:
   ENABLED: true
 DATA_DIR: ''
 GPUS: (0, 1)
-OUTPUT_DIR: 'test'
+OUTPUT_DIR: 'output'
 LOG_DIR: 'log'
 WORKERS: 8
 PRINT_FREQ: 10
