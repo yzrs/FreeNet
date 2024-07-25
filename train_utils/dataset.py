@@ -262,19 +262,19 @@ class CocoKeypoint(data.Dataset):
         id_set = self.get_id_set(num)
         self.sample_anns_by_id(id_set)
 
-    def sample_anns_by_imgs_ids_file(self,path):
-        with open(path,'r') as f:
+    def sample_anns_by_imgs_ids_file(self, path):
+        with open(path, 'r') as f:
             ids = json.load(f)
         anns_ids_set = set()
         for img_id in ids:
             img = self.coco.loadImgs(img_id)[0]
-            anns_ids = self.coco.getAnnIds(imgIds=img['id'],iscrowd=None)
+            anns_ids = self.coco.getAnnIds(imgIds=img['id'], iscrowd=None)
             anns = self.coco.loadAnns(anns_ids)
             for ann in anns:
                 anns_ids_set.add(ann['id'])
         self.sample_anns_by_id(anns_ids_set)
 
-    def get_qualified_few_shot(self,num,num_lambda=0.8):
+    def get_qualified_few_shot(self, num, num_lambda=0.8):
         ids_set_path = f"info/{self.dataset}_few_shot_id_path_{num}.json"
         if not os.path.exists(ids_set_path):
             valid_ids_set = set()
@@ -284,11 +284,11 @@ class CocoKeypoint(data.Dataset):
                     valid_ids_set.add(ann['anno_id'])
                     valid_ids_list.append(ann['anno_id'])
 
-            ids_info = {"ids":valid_ids_list}
-            with open(ids_set_path,'w') as f:
-                json.dump(ids_info,f,indent=4)
+            ids_info = {"ids": valid_ids_list}
+            with open(ids_set_path, 'w') as f:
+                json.dump(ids_info, f, indent=4)
         else:
-            with open(ids_set_path,'r') as f:
+            with open(ids_set_path, 'r') as f:
                 valid_ids_list = json.load(f)['ids']
             valid_ids_set = set()
             for val in valid_ids_list:
@@ -296,26 +296,26 @@ class CocoKeypoint(data.Dataset):
 
         self.valid_list = [ann for ann in self.valid_list if ann['anno_id'] in valid_ids_set]
 
-    def get_qualified_balanced_few_shot(self,args,num_per_species):
+    def get_qualified_balanced_few_shot(self, args, num_per_species):
         ids_set_path = f"info/{self.dataset}_balanced_few_shot_id_path_{num_per_species}.json"
         if not os.path.exists(ids_set_path):
             anns_list = copy.copy(self.valid_list)
             valid_ids_set = set()
             valid_ids_list = [[] for _ in range(len(self.coco.cats))]
-            sorted_anns_list = sorted(anns_list,key=lambda x:np.count_nonzero(x['visible']),reverse=True)
+            sorted_anns_list = sorted(anns_list, key=lambda x: np.count_nonzero(x['visible']), reverse=True)
             for ann in sorted_anns_list:
                 category_id = ann['category_id']
-                if len(valid_ids_list[category_id-1]) < num_per_species:
-                    valid_ids_list[category_id-1].append(ann['anno_id'])
+                if len(valid_ids_list[category_id - 1]) < num_per_species:
+                    valid_ids_list[category_id - 1].append(ann['anno_id'])
                     valid_ids_set.add(ann['anno_id'])
                 else:
                     continue
 
-            ids_info = {"ids":valid_ids_list}
-            with open(ids_set_path,'w') as f:
-                json.dump(ids_info,f,indent=4)
+            ids_info = {"ids": valid_ids_list}
+            with open(ids_set_path, 'w') as f:
+                json.dump(ids_info, f, indent=4)
         else:
-            with open(ids_set_path,'r') as f:
+            with open(ids_set_path, 'r') as f:
                 valid_ids_list = json.load(f)['ids']
             valid_ids_set = set()
             for val_list in valid_ids_list:
@@ -332,8 +332,8 @@ class CocoKeypoint(data.Dataset):
         for cat in self.coco.cats:
             animal_names.append(self.coco.cats[cat]['name'])
         for ann in self.valid_list:
-            animal_nums[ann['category_id']-1] += 1
-        animal_num_dict = {name:num for name,num in zip(animal_names,animal_nums)}
+            animal_nums[ann['category_id'] - 1] += 1
+        animal_num_dict = {name: num for name, num in zip(animal_names, animal_nums)}
         print(animal_num_dict)
         return animal_num_dict
 
@@ -344,14 +344,14 @@ class CocoKeypoint(data.Dataset):
             animal_nums[ann['category_id'] - 1].append(np.count_nonzero(ann['visible']))
         print('debug')
 
-    def get_avg_imgs_from_animals(self,avg_num):
+    def get_avg_imgs_from_animals(self, avg_num):
         animals_dict = self.coco.catToImgs
         imgs_ids = [[] for _ in range(len(self.coco.cats))]
         for animal_category_id in animals_dict:
             ids = animals_dict[animal_category_id]
             if len(ids) > 0:
-                tmp_ls = random.sample(ids,avg_num)
-                imgs_ids[animal_category_id-1].extend(tmp_ls)
+                tmp_ls = random.sample(ids, avg_num)
+                imgs_ids[animal_category_id - 1].extend(tmp_ls)
         anns_ids = set()
         for ls in imgs_ids:
             for img_id in ls:
@@ -360,52 +360,52 @@ class CocoKeypoint(data.Dataset):
                     anns_ids.add(ann['id'])
         self.sample_anns_by_id(anns_ids)
 
-    def get_avg_animals(self,num):
+    def get_avg_animals(self, num):
         anns_ids = [[] for _ in range(len(self.coco.cats))]
         valid_ls = copy.copy(self.valid_list)
         random.shuffle(valid_ls)
         for ann in valid_ls:
             animal_id = ann['category_id']
-            if len(anns_ids[animal_id-1]) < num:
-                anns_ids[animal_id-1].append(ann['anno_id'])
+            if len(anns_ids[animal_id - 1]) < num:
+                anns_ids[animal_id - 1].append(ann['anno_id'])
         ids_set = set()
         for s_ls in anns_ids:
             for s_id in s_ls:
                 ids_set.add(s_id)
         self.sample_anns_by_id(ids_set)
 
-    def load_missing_anns(self,path):
-        with open(path,'r') as f:
+    def load_missing_anns(self, path):
+        with open(path, 'r') as f:
             anns_info = json.load(f)
         imgId2annIndex = {}
-        for i,ann in enumerate(self.valid_list):
+        for i, ann in enumerate(self.valid_list):
             img_id = ann['image_id']
             if img_id not in imgId2annIndex:
                 imgId2annIndex[img_id] = [i]
             else:
                 imgId2annIndex[img_id].append(i)
         # cnt = 0
-        for i,ann in enumerate(anns_info):
+        for i, ann in enumerate(anns_info):
             box = [val for val in ann['box']]
             related_anns_indices = imgId2annIndex[ann['image_id']]
             for ind in related_anns_indices:
                 cur_box = [val for val in self.valid_list[ind]['box']]
-                if self.compareList(box,cur_box):
+                if self.compareList(box, cur_box):
                     # cnt += 1
                     # logger.info("{}_th ann updated {}/9122".format(i,cnt))
                     self.valid_list[ind]['visible'] = np.array(ann['vis'])
                     break
 
     @staticmethod
-    def compareList(list_a,list_b):
+    def compareList(list_a, list_b):
         if len(list_a) != len(list_b):
             return False
         for i in range(len(list_a)):
-            if abs(list_a[i]-list_b[i]) > 2:
+            if abs(list_a[i] - list_b[i]) > 2:
                 return False
         return True
 
-    def set_transform(self,transform):
+    def set_transform(self, transform):
         self.transforms = transform
 
     @staticmethod
@@ -421,7 +421,7 @@ class CocoKeypoint(data.Dataset):
         aug_imgs = [imgs[1] for imgs in imgs_list]
         ori_imgs_tensor = torch.stack(ori_imgs)
         aug_imgs_tensor = torch.stack(aug_imgs)
-        return (ori_imgs_tensor,aug_imgs_tensor), targets_list
+        return (ori_imgs_tensor, aug_imgs_tensor), targets_list
 
     @staticmethod
     def collate_fn_consistency(batch):
@@ -432,7 +432,7 @@ class CocoKeypoint(data.Dataset):
         strong_targets = [targets[1] for targets in targets_list]
         weak_imgs_tensor = torch.stack(weak_imgs)
         strong_imgs_tensor = torch.stack(strong_imgs)
-        return (weak_imgs_tensor,strong_imgs_tensor), (weak_targets,strong_targets)
+        return (weak_imgs_tensor, strong_imgs_tensor), (weak_targets, strong_targets)
 
 
 # merge info is a list of dictionary. Like:
@@ -458,14 +458,15 @@ class MixKeypoint(data.Dataset):
             "animal_pose": os.path.join(root, "animal_pose"),
             "tigdog_horse": os.path.join(root, "tigdog_horse"),
             "tigdog_tiger": os.path.join(root, "tigdog_tiger"),
-            "ap_10k_animal_pose_union":os.path.join(root,"merged_animal"),
+            "ap_10k_animal_pose_union": os.path.join(root, "merged_animal"),
             "tigdog": os.path.join(root, "tigdog"),
         }
         self.dataset_infos = merge_info
         for dataset_info in self.dataset_infos:
             dataset = dataset_info['dataset']
             mode = dataset_info['mode']
-            assert dataset in ["ap_10k", "animal_pose", "tigdog","tigdog_horse", "tigdog_tiger","ap_10k_animal_pose_union"]
+            assert dataset in ["ap_10k", "animal_pose", "tigdog", "tigdog_horse", "tigdog_tiger",
+                               "ap_10k_animal_pose_union"]
             if dataset == "ap_10k":
                 dataset_info['num_joints'] = 17
             elif dataset == "animal_pose":
@@ -531,101 +532,6 @@ class MixKeypoint(data.Dataset):
         for length in self.length_list:
             total_length += length
         return total_length
-
-    def get_valid_ann(self, args):
-        selected_info_path = args.selected_info_path
-        selected_lists = self.valid_lists.copy()
-        if not os.path.exists(selected_info_path):
-            selected_info = []
-            for dataset_index, ls in enumerate(selected_lists):
-                selected_num = 1
-                if ls['dataset'] == 'ap_10k':
-                    selected_num = 7000
-                elif ls['dataset'] == 'animal_pose':
-                    selected_num = 1000
-                elif ls['dataset'] == 'tigdog_horse':
-                    selected_num = 500
-                elif ls['dataset'] == 'tigdog_tiger':
-                    selected_num = 500
-                anns = ls['annotations'].copy()
-                anns = random.sample(anns, selected_num)
-                valid_ids = []
-                for single_info in anns:
-                    valid_ids.append(single_info['anno_id'])
-                ls['annotations'] = anns
-                anno_num = len(anns)
-                ls['length'] = anno_num
-                tmp_dict = {"dataset": ls['dataset'], "mode": ls['mode'], "anno_ids": valid_ids, "anno_num": anno_num}
-                selected_info.append(tmp_dict)
-
-                # update info of the original dataset
-                self.length_list[dataset_index] = anno_num
-                self.dataset_infos[dataset_index]['length'] = anno_num
-                self.anno_num = self.anno_num - ls['length'] + anno_num
-                self.valid_lists[dataset_index] = ls
-            with open(selected_info_path, 'w') as f:
-                json.dump(selected_info, f, indent=4)
-        else:
-            with open(selected_info_path, 'r') as f:
-                selected_info = json.load(f)
-            for dataset_index, ls in enumerate(selected_lists):
-                current_dataset = ls['dataset']
-                current_mode = ls['mode']
-                current_anns = ls['annotations'].copy()
-                current_id_set = set()
-                # generate its corresponding id set
-                for info in selected_info:
-                    if info['dataset'] == current_dataset and info['mode'] == current_mode:
-                        ls['length'] = info['anno_num']
-                        for one_id in info['anno_ids']:
-                            if one_id not in current_id_set:
-                                current_id_set.add(one_id)
-                        break
-
-                current_anns = [ann for ann in current_anns if ann['anno_id'] in current_id_set]
-                ls['annotations'] = current_anns
-
-                anno_num = ls['length']
-                # update the list to the original dataset
-                self.valid_lists[dataset_index] = ls
-                # update corresponding info
-                self.anno_num = self.anno_num - self.length_list[dataset_index] + anno_num
-                self.length_list[dataset_index] = anno_num
-                self.dataset_infos[dataset_index]['length'] = anno_num
-
-    def get_invalid_ann(self, args):
-        selected_info_path = args.selected_info_path
-        selected_lists = self.valid_lists.copy()
-
-        with open(selected_info_path, 'r') as f:
-            selected_info = json.load(f)
-        for dataset_index, ls in enumerate(selected_lists):
-            current_dataset = ls['dataset']
-            current_mode = ls['mode']
-            current_anns = ls['annotations'].copy()
-            current_id_set = set()
-            # generate its corresponding id set
-            for info in selected_info:
-                if info['dataset'] == current_dataset and info['mode'] == current_mode:
-                    ls['length'] = ls['length'] - info['anno_num']
-                    for one_id in info['anno_ids']:
-                        if one_id not in current_id_set:
-                            current_id_set.add(one_id)
-                    break
-
-            current_anns = [ann for ann in current_anns if ann['anno_id'] not in current_id_set]
-            for ann in current_anns:
-                num_joint = ann['visible_ori'].shape[0]
-                ann['visible'] = np.zeros((num_joint,), dtype=np.int64)
-            ls['annotations'] = current_anns
-
-            anno_num = ls['length']
-            # update the list to the original dataset
-            self.valid_lists[dataset_index] = ls
-            # update corresponding info
-            self.anno_num = self.anno_num - self.length_list[dataset_index] + anno_num
-            self.length_list[dataset_index] = anno_num
-            self.dataset_infos[dataset_index]['length'] = anno_num
 
     def __keypoint_sample(self, args):
         selected_vis_path = args.selected_vis_path
@@ -796,7 +702,7 @@ class MixKeypoint(data.Dataset):
             self.dataset_infos[list_index]['length'] = num
         self.get_kps_num(args, num_lamda)
 
-    def sample_few(self,num_ratio=0.1):
+    def sample_few(self, num_ratio=0.1):
         select_num = int(self.anno_num * num_ratio)
         random_indices = random.sample(range(self.anno_num), select_num)
         local_indices = [[] for _ in range(len(self.valid_lists))]
@@ -812,23 +718,10 @@ class MixKeypoint(data.Dataset):
         for dataset_index in range(len(self.valid_lists)):
             tmp_anns = self.valid_lists[dataset_index]["annotations"]
             tmp_indices = local_indices[dataset_index]
-            tmp_anns = [ann for j,ann in enumerate(tmp_anns) if j in tmp_indices]
+            tmp_anns = [ann for j, ann in enumerate(tmp_anns) if j in tmp_indices]
             self.valid_lists[dataset_index]["annotations"] = tmp_anns
         self.__update_info()
         # self.get_kps_num(args,num_ratio)
-
-    def balance_tigdog(self, args, num_lamda=0.1):
-        for list_index, valid_list in enumerate(self.valid_lists):
-            if valid_list['dataset'] == 'tigdog_horse' or valid_list['dataset'] == 'tigdog_tiger':
-                valid_anns = valid_list['annotations']
-                num = int(len(valid_anns) * num_lamda)
-                val_list = random.sample(valid_anns, num)
-                valid_list['annotations'] = val_list
-                self.valid_lists[list_index]['length'] = num
-                self.anno_num = self.anno_num - self.length_list[list_index] + num
-                self.length_list[list_index] = num
-                self.dataset_infos[list_index]['length'] = num
-        self.get_kps_num(args, num_lamda)
 
     def get_kps_num(self, args):
         with open(args.keypoints_path) as f:
@@ -857,12 +750,7 @@ class MixKeypoint(data.Dataset):
             res[current_dataset][current_mode] = {key: val for key, val in zip(kps, tmp_num)}
 
         res['keypoints'] = {key: val for key, val in zip(kps, kp_num)}
-        # print("sample kps num :", res)
         logger.info("sample kps num :%s", res)
-
-        # write_path = f"../statistics_file/num_results/ap10k_animalpose_train_dataset_kp_num.json"
-        # with open(write_path, 'w') as f:
-        #     json.dump(res, f, indent=4)
 
     def __mix_kps_num_get(self, args):
         num_mix = [0] * 26
@@ -964,49 +852,49 @@ class MixKeypoint(data.Dataset):
             self.valid_lists[list_index]['annotations'] = anns
         self.__update_info()
 
-    def eliminate_repeated_data(self,label_valid_lists):
+    def eliminate_repeated_data(self, label_valid_lists):
         idxs = [[] for _ in range(len(label_valid_lists))]
-        for list_index,valid_list in enumerate(label_valid_lists):
+        for list_index, valid_list in enumerate(label_valid_lists):
             anns = valid_list['annotations']
             for ann in anns:
                 idxs[list_index].append(ann['anno_id'])
-        for ids,valid_list in zip(idxs,self.valid_lists):
+        for ids, valid_list in zip(idxs, self.valid_lists):
             anns = valid_list['annotations']
             anns = [ann for ann in anns if ann['anno_id'] not in ids]
             valid_list['annotations'] = anns
         self.__update_info()
 
-    def sample_animal_few_shot(self,sample_num=None):
+    def sample_animal_few_shot(self, sample_num=None):
         assert len(sample_num) == len(self.valid_lists), "Length of Sample Num should be same as the number of dataset."
-        for i,valid_list in enumerate(self.valid_lists):
-            cats = [0 for _ in range(len(self.coco_lists[i]['coco'].cats)+1)]
+        for i, valid_list in enumerate(self.valid_lists):
+            cats = [0 for _ in range(len(self.coco_lists[i]['coco'].cats) + 1)]
             cur_ann_ids = []
             cur_sample_num = sample_num[i]
             anns = valid_list['annotations']
-            anns = sorted(anns,key=lambda x:np.count_nonzero(x['visible']),reverse=True)
+            anns = sorted(anns, key=lambda x: np.count_nonzero(x['visible']), reverse=True)
             for ann in anns:
                 category_id = ann['category_id']
                 if cats[category_id] < cur_sample_num:
                     cur_ann_ids.append(ann['anno_id'])
                     cats[category_id] += 1
             anns = [ann for ann in anns if ann['anno_id'] in cur_ann_ids]
-            anns = sorted(anns,key=lambda x:x['category_id'],reverse=False)
+            anns = sorted(anns, key=lambda x: x['category_id'], reverse=False)
             valid_list['annotations'] = anns
         self.__update_info()
 
-    def eliminate_specific_animals(self,dataset_index,animal_indices,save_num):
+    def eliminate_specific_animals(self, dataset_index, animal_indices, save_num):
         anns = self.valid_lists[dataset_index]['annotations']
         # get the animal num
-        cat_num = [0 for _ in range(len(self.coco_lists[dataset_index]['coco'].cats)+1)]
+        cat_num = [0 for _ in range(len(self.coco_lists[dataset_index]['coco'].cats) + 1)]
         for ann in anns:
             cat_num[ann['category_id']] += 1
         # eliminate the target animal anns
         to_del_indices = []
-        for i,ann in enumerate(anns):
+        for i, ann in enumerate(anns):
             if ann['category_id'] in animal_indices and cat_num[ann['category_id']] > save_num:
                 to_del_indices.append(i)
-                cat_num[ann['category_id']] = max(0,cat_num[ann['category_id']]-1)
-        to_del_indices = sorted(to_del_indices,key=lambda x:x,reverse=True)
+                cat_num[ann['category_id']] = max(0, cat_num[ann['category_id']] - 1)
+        to_del_indices = sorted(to_del_indices, key=lambda x: x, reverse=True)
         for ind in to_del_indices:
             del anns[ind]
         self.__update_info()
@@ -1048,30 +936,16 @@ class MixKeypoint(data.Dataset):
         imgs_num = len(img_ids)
         img_ann_ids_save_path = f'./info/random_{imgs_num}_img_ann_ids.json'
         img_ids_save_path = f'./info/random_{imgs_num}_img_ids.json'
-        with open(img_ann_ids_save_path,'w') as f:
-            json.dump(img_ann_ids,f,ensure_ascii=False)
-        with open(img_ids_save_path,'w') as f:
-            json.dump(img_ids,f)
+        with open(img_ann_ids_save_path, 'w') as f:
+            json.dump(img_ann_ids, f, ensure_ascii=False)
+        with open(img_ids_save_path, 'w') as f:
+            json.dump(img_ids, f)
         print(f'Files wrote done: {img_ids_save_path}')
         print(f'Files wrote done: {img_ann_ids_save_path}')
 
-    def tmp_method(self):
-        ap_10k_path = '../info/4_anns_ap_10k_ids.json'
-        animal_pose_path = '../info/4_anns_animal_pose_ids.json'
-        with open(ap_10k_path, 'r') as f:
-            ap_10k_ids = json.load(f)
-        with open(animal_pose_path, 'r') as f:
-            animal_pose_ids = json.load(f)
-        anno_ids_ap_10k = [info['anno_id'] for info in ap_10k_ids]
-        anno_ids_animal_pose = [info['anno_id'] for info in animal_pose_ids]
-        ap_10k_anns = self.valid_lists[0]['annotations']
-        animal_pose_anns = self.valid_lists[1]['annotations']
-        self.valid_lists[0]['annotations'] = [ann for ann in ap_10k_anns if ann['anno_id'] in anno_ids_ap_10k]
-        self.valid_lists[1]['annotations'] = [ann for ann in animal_pose_anns if ann['anno_id'] in anno_ids_animal_pose]
-        self.__update_info()
 
-    def load_anns_from_file(self,path):
-        with open(path,'r') as f:
+    def load_anns_from_file(self, path):
+        with open(path, 'r') as f:
             ids_info = json.load(f)
         ap_10k_img_id_bias = 58632
         ap_10k_ann_id_bias = 16561
@@ -1081,7 +955,7 @@ class MixKeypoint(data.Dataset):
             tmp_ann_ids = np.copy(ids_info[img_id])
             # if it is animal pose anns
             if int(img_id) > ap_10k_img_id_bias:
-                for i,ann_id in enumerate(tmp_ann_ids):
+                for i, ann_id in enumerate(tmp_ann_ids):
                     tmp_ann_ids[i] = ann_id - ap_10k_ann_id_bias
                 for val in tmp_ann_ids:
                     animal_pose_ann_id_set.add(val)
@@ -1113,5 +987,4 @@ class MixKeypoint(data.Dataset):
         aug_imgs = [imgs[1] for imgs in imgs_list]
         ori_imgs_tensor = torch.stack(ori_imgs)
         aug_imgs_tensor = torch.stack(aug_imgs)
-        return (ori_imgs_tensor,aug_imgs_tensor), targets_list
-
+        return (ori_imgs_tensor, aug_imgs_tensor), targets_list

@@ -5,8 +5,8 @@ from torch import nn
 from torch.cuda import amp
 from tqdm import tqdm
 from train_utils.transforms import get_max_preds
-from train_utils.utils import (AverageMeter, generate_heatmap,AvgImgMSELoss_v3,
-                               AvgImgMSELoss, get_current_topkrate,coteaching_rt)
+from train_utils.utils import (AverageMeter, generate_heatmap,
+                               AvgImgMSELoss, get_current_topkrate)
 from train_utils import transforms
 import torch
 from torch.utils.data import DataLoader

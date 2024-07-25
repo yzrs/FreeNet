@@ -7,6 +7,7 @@ import json
 import numpy as np
 import torch
 import pprint
+import shutil
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader,SubsetRandomSampler
 from train_utils.utils import get_cosine_schedule_with_warmup
@@ -78,22 +79,14 @@ def main(cfg,args):
     tea_pretrained_weights_path = os.path.join(base_weight_path,tea_weight_name)
     stu_pretrained_weights_path = os.path.join(base_weight_path,stu_weight_name)
     t_model = HighResolutionNet(num_joints=args.num_joints)
+    s_model = HighResolutionNet(num_joints=args.num_joints)
+
     stu_checkpoint = torch.load(stu_pretrained_weights_path)
     tea_checkpoint = torch.load(tea_pretrained_weights_path)
-
-    attr_flag = False
-    for key in ['state_dict','model','student_model','directly']:
-        if key in tea_checkpoint:
-            t_model.load_state_dict(tea_checkpoint[key])
-            attr_flag = True
-            break
-    if not attr_flag:
-        t_model.load_state_dict(tea_checkpoint)
-
-    s_model = HighResolutionNet(num_joints=args.num_joints)
+    t_model.load_state_dict(tea_checkpoint)
     s_model.load_state_dict(stu_checkpoint,strict=False)
 
-    logger.info(f"teacher model loaded from {tea_pretrained_weights_path}:{key}")
+    logger.info(f"teacher model loaded from {tea_pretrained_weights_path}")
     logger.info(f"student model loaded from {stu_pretrained_weights_path}")
 
     t_model = torch.nn.DataParallel(t_model,device_ids=args.gpus).cuda()
@@ -253,6 +246,16 @@ if __name__ == "__main__":
     save_weights_output_dir = os.path.join(output_dir,'save_weights')
     if not os.path.exists(save_weights_output_dir):
         os.mkdir(save_weights_output_dir)
+
+    source_file_path = 'ours_synthetic_ap_10k.py'
+    target_file_path = os.path.join(output_dir, 'ours_synthetic_ap_10k.py')
+    shutil.copy(source_file_path, target_file_path)
+    print(f"file saved to: {target_file_path}")
+
+    source_file_path = 'train_utils/ssl_utils.py'
+    target_file_path = os.path.join(output_dir, 'ssl_utils.py')
+    shutil.copy(source_file_path, target_file_path)
+    print(f"file saved to: {target_file_path}")
 
     gpu_list = args.gpus
     str_list = [str(num) for num in gpu_list]

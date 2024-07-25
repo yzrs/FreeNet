@@ -7,6 +7,7 @@ import json
 import numpy as np
 import torch
 import pprint
+import shutil
 from tensorboardX import SummaryWriter
 from torch.utils.data import DataLoader,SubsetRandomSampler
 from train_utils.utils import get_cosine_schedule_with_warmup
@@ -27,9 +28,7 @@ def set_seed(args):
 
 
 def main(cfg,args):
-    # 将args转换为字典
     args_dict = vars(args)
-    # 打印参数值
     logger.info('Args: %s', args_dict)
 
     if args.seed is not None:
@@ -82,20 +81,12 @@ def main(cfg,args):
     t_model = HighResolutionNet(num_joints=args.num_joints)
     stu_checkpoint = torch.load(stu_pretrained_weights_path)
     tea_checkpoint = torch.load(tea_pretrained_weights_path)
-
-    attr_flag = False
-    for key in ['state_dict','model','student_model','directly']:
-        if key in tea_checkpoint:
-            t_model.load_state_dict(tea_checkpoint[key])
-            attr_flag = True
-            break
-    if not attr_flag:
-        t_model.load_state_dict(tea_checkpoint)
+    t_model.load_state_dict(tea_checkpoint)
 
     s_model = HighResolutionNet(num_joints=args.num_joints)
     s_model.load_state_dict(stu_checkpoint,strict=False)
 
-    logger.info(f"teacher model loaded from {tea_pretrained_weights_path}:{key}")
+    logger.info(f"teacher model loaded from {tea_pretrained_weights_path}")
     logger.info(f"student model loaded from {stu_pretrained_weights_path}")
 
     t_model = torch.nn.DataParallel(t_model,device_ids=args.gpus).cuda()
@@ -192,7 +183,7 @@ if __name__ == "__main__":
     parser.add_argument('--data-root', default='../dataset/ap_10k', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default='scarcenet.pth',
+    parser.add_argument('--pretrained-weights-name', default='pretrained_25_5.pth',
                         type=str, help='pretrained weights name')
 
     parser.add_argument('--anns-info-path', default='info/25_5_imgs_keypoints_anns_info.json',
@@ -213,11 +204,9 @@ if __name__ == "__main__":
     parser.add_argument('--feedback-steps-complete', default=6000, type=float, help='warmup steps of feedback')
     parser.add_argument('--feedback-weight', default=2, type=float, help='feedback scalar')
 
-    # 学习率
     parser.add_argument('--teacher_lr', default=1e-5, type=float,help='initial learning rate, 1e-5 is the default value for training')
     parser.add_argument('--student_lr', default=1e-3, type=float,help='initial learning rate, 1e-3 is the default value for training')
 
-    # AdamW的weight_decay参数
     parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,metavar='W',
                         help='weight decay (default: 1e-4)',dest='weight_decay')
     parser.add_argument('--grad-clip', default=1e9, type=float, help='gradient norm clipping')
@@ -226,11 +215,9 @@ if __name__ == "__main__":
     parser.add_argument('--batch-size', default=4, type=int, help='batch size of label data')
     parser.add_argument('--mu', default=1, type=int, help='batch size factor of unlabel data ')
     parser.add_argument('--seed', default=2, type=int, help='seed for initializing training')
-    # animal body关键点信息
     parser.add_argument('--keypoints-path', default="./info/ap_10k_keypoints_format.json", type=str,
                         help='keypoints_format.json path')
     parser.add_argument('--fixed-size', default=[256, 256], nargs='+', type=int, help='input size')
-    # keypoints点数
     parser.add_argument('--num-joints', default=17, type=int, help='num_joints')
     # best info
     parser.add_argument('--best-oks', default=0, type=float,help='best OKS performance during training')
@@ -239,8 +226,7 @@ if __name__ == "__main__":
     parser.add_argument('--best-pck-epoch', default=0, type=int,help='best PCK performance Epoch during training')
 
     parser.add_argument("--amp",default=True,action="store_true",  help="Use torch.cuda.amp for mixed precision training")
-    # for ScarceNet Test
-    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3.yaml',
+    parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
 
@@ -260,6 +246,16 @@ if __name__ == "__main__":
     save_weights_output_dir = os.path.join(output_dir,'save_weights')
     if not os.path.exists(save_weights_output_dir):
         os.mkdir(save_weights_output_dir)
+
+    source_file_path = 'finetune.py'
+    target_file_path = os.path.join(output_dir, 'finetune.py')
+    shutil.copy(source_file_path, target_file_path)
+    print(f"file saved to: {target_file_path}")
+
+    source_file_path = 'train_utils/ssl_utils.py'
+    target_file_path = os.path.join(output_dir, 'ssl_utils.py')
+    shutil.copy(source_file_path, target_file_path)
+    print(f"file saved to: {target_file_path}")
 
     gpu_list = args.gpus
     str_list = [str(num) for num in gpu_list]  # 将数字列表转换为字符串列表

@@ -137,8 +137,7 @@ For synthetic datasets derived from AP-10k:
 # Parameter level is required here.
 # Level = 0 -> share eyes,nose,neck,tail(5 kps)
 # Level = 1 -> share Level 0 + paws(9 kps)
-python ours_split_ap_10k.py \
-    --level 0 \ 
+python ours_split_ap_10k.py --level 0 \
     --workers 8 \
     --seed 2 \
     --batch-size 32 \
@@ -164,6 +163,21 @@ python ours_synthetic_ap_10k.py \
     --eval-step 150 \
     --warmup-steps 900 \
     --down-step 9000 \
+    --feedback-steps-start 4500 \
+    --feedback-steps-complete 6000 \
+    --amp
+```
+
+```shell
+python finetune.py \
+    --workers 8 \
+    --seed 2 \
+    --batch-size 8 \
+    --mu 7 \
+    --total-steps 6000 \
+    --eval-step 150 \
+    --warmup-steps 900 \
+    --down-step 6000 \
     --feedback-steps-start 4500 \
     --feedback-steps-complete 6000 \
     --amp
@@ -210,6 +224,8 @@ python ours_ap10k_animalpose_tigdog.py \
 For evaluation on AP-10k:
 
 ```shell
+# remember to change the key order in codes if you directly use the checkpoint file
+# for key in ['teacher_model','student_model','state_dict','model','directly']
 python eval_ap10k.py \
     --cfg outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k.yaml \
     --animalpose \

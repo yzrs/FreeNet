@@ -2,7 +2,6 @@ import json
 import math
 import random
 from typing import Tuple
-from PIL import Image
 import cv2
 import numpy as np
 import torch
@@ -11,7 +10,7 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 import copy
 
-from train_utils.augmentation import RandWeakAugment,RandWeakAugmentFixMatch
+from train_utils.augmentation import RandWeakAugment
 
 
 def flip_images(img):
@@ -343,17 +342,11 @@ class AffineTransform(object):
         dst /= 4  # 网络预测的heatmap尺寸是输入图像的1/4
         reverse_trans = cv2.getAffineTransform(dst, src)  # 计算逆向仿射变换矩阵，方便后续还原
 
-        # 对图像进行仿射变换
         resize_img = cv2.warpAffine(img,
                                     trans,
                                     tuple(self.fixed_size[::-1]),  # [w, h]
                                     flags=cv2.INTER_LINEAR
                                     )
-        # from matplotlib import pyplot as plt
-        # fig,axs = plt.subplots(1,2)
-        # axs[0].imshow(img)
-        # axs[1].imshow(resize_img)
-        # plt.show()
 
         if "keypoints" in target:
             kps = target["keypoints"]
@@ -434,13 +427,11 @@ class KeypointToHeatMap(object):
         for kp_id in range(num_kps):
             v = kps_weights[kp_id]
             if v < 0.5:
-                # 如果该点的可见度很低，则直接忽略
                 continue
 
             x, y = heatmap_kps[kp_id]
             ul = [x - self.kernel_radius, y - self.kernel_radius]  # up-left x,y
             br = [x + self.kernel_radius, y + self.kernel_radius]  # bottom-right x,y
-            # 如果以xy为中心kernel_radius为半径的辐射范围内与heatmap没交集，则忽略该点(该规则并不严格)
             if ul[0] > self.heatmap_hw[1] - 1 or \
                     ul[1] > self.heatmap_hw[0] - 1 or \
                     br[0] < 0 or \
@@ -450,23 +441,18 @@ class KeypointToHeatMap(object):
                 continue
 
             # Usable gaussian range
-            # 计算高斯核有效区域（高斯核坐标系）
             g_x = (max(0, -ul[0]), min(br[0], self.heatmap_hw[1] - 1) - ul[0])
             g_y = (max(0, -ul[1]), min(br[1], self.heatmap_hw[0] - 1) - ul[1])
             # image range
-            # 计算heatmap中的有效区域（heatmap坐标系）
             img_x = (max(0, ul[0]), min(br[0], self.heatmap_hw[1] - 1))
             img_y = (max(0, ul[1]), min(br[1], self.heatmap_hw[0] - 1))
 
             if kps_weights[kp_id] > 0.5:
-                # 将高斯核有效区域复制到heatmap对应区域
                 heatmap[kp_id][img_y[0]:img_y[1] + 1, img_x[0]:img_x[1] + 1] = \
                     self.kernel[g_y[0]:g_y[1] + 1, g_x[0]:g_x[1] + 1]
 
         if self.use_kps_weights:
             kps_weights = np.multiply(kps_weights, self.kps_weights)
-
-        # plot_heatmap(image, heatmap, kps, kps_weights)
 
         target["heatmap"] = torch.as_tensor(heatmap, dtype=torch.float32)
         target["kps_weights"] = torch.as_tensor(kps_weights, dtype=torch.float32)
@@ -694,142 +680,9 @@ class LabelFormatTransUnion(object):
         target['visible_ori'] = des_vis.copy()
         return image, target
 
-# (17,3)->(51,)
-class OnlyLabelFormatTrans(object):
-    def __init__(self, extend_flag=True):
-        self.extend_flag = extend_flag
-        self.map_info = {'extend': {'ap_10k': {}, 'animal_pose': {}, "tigdog_horse":{},"tigdog_tiger":{}},
-                         'shrink': {'ap_10k': {}, 'animal_pose': {}, "tigdog_horse":{},"tigdog_tiger":{}}
-                         }
-        # [ap_10k,mixed]
-        ap_10k_map = [[0, 0], [1, 1], [2, 4], [3, 8], [4, 25], [5, 11], [6, 15], [7, 21],
-                      [8, 12], [9, 16], [10, 22], [11, 13], [12, 17], [13, 23], [14, 14], [15, 18], [16, 24]]
-        animal_pose_map = [[0, 0], [1, 1], [2, 4], [3, 2], [4, 3], [5, 11], [6, 12], [7, 13],
-                           [8, 14], [9, 15], [10, 16], [11, 17], [12, 18], [13, 21], [14, 22], [15, 23],
-                           [16, 24], [17, 6], [18, 7], [19, 25]]
-        tigdog_horse_map = [[0, 0], [1, 1], [2, 5], [3, 21], [4, 22], [5, 23], [6, 24], [7, 25],
-                            [8, 15], [9, 16], [10, 17], [11, 18], [12, 9], [13, 10], [14, 11], [15, 12],
-                            [16, 13], [17, 14], [18, 8]]
-        tigdog_tiger_map = [[0, 0], [1, 1], [2, 5], [3, 21], [4, 22], [5, 23], [6, 24], [7, 25],
-                            [8, 19], [9, 20], [10, 17], [11, 18], [12, 9], [13, 10], [14, 11], [15, 12],
-                            [16, 13], [17, 14], [18, 8]]
-        for lis in ap_10k_map:
-            k, v = lis
-            self.map_info['extend']['ap_10k'][k] = v
-            self.map_info['shrink']['ap_10k'][v] = k
-        for lis in animal_pose_map:
-            k, v = lis
-            self.map_info['extend']['animal_pose'][k] = v
-            self.map_info['shrink']['animal_pose'][v] = k
-        for lis in tigdog_horse_map:
-            k, v = lis
-            self.map_info['extend']['tigdog_horse'][k] = v
-            self.map_info['shrink']['tigdog_horse'][v] = k
-        for lis in tigdog_tiger_map:
-            k, v = lis
-            self.map_info['extend']['tigdog_tiger'][k] = v
-            self.map_info['shrink']['tigdog_tiger'][v] = k
 
-    # (26,3) -> (17,3) -> (51,)
-    def __call__(self, target):
-        kps = np.array(target['keypoints'].copy()).reshape(-1,3)
-        vis = kps[:,-1].copy()
-        kps = kps[:,:-1].copy()
-        # src dataset -> mix dataset
-        if self.extend_flag:
-            num = 26
-            des_kps = np.zeros((num, 2))
-            des_vis = np.zeros(num)
-            map_info = self.map_info['extend'][target['dataset']]
-            for key in map_info:
-                val = map_info[key]
-                des_kps[val] = kps[key]
-                des_vis[val] = vis[key]
-            target['keypoints'] = des_kps
-            target['visible'] = des_vis
-        # mix dataset -> src dataset
-        else:
-            if target['dataset'] == 'ap_10k':
-                num = 17
-            elif target['dataset'] == 'animal_pose':
-                num = 20
-            elif target['dataset'] == 'tigdog_horse' or target['dataset'] == 'tigdog_tiger':
-                num = 19
-            des_kps = np.zeros((num, 2))
-            des_vis = np.zeros(num)
-            map_info = self.map_info['shrink'][target['dataset']]
-            for key in map_info:
-                val = map_info[key]
-                des_kps[val] = kps[key]
-                des_vis[val] = vis[key]
-            combine_array = np.column_stack((des_kps, des_vis))
-            target['keypoints'] = combine_array.flatten().tolist()
-            # target['visible'] = des_vis.tolist()
-        return target
-
-
-class OnlyLabelFormatTransAP10KAnimalPose(object):
-    def __init__(self, extend_flag=True):
-        self.extend_flag = extend_flag
-        self.map_info = {'extend': {'ap_10k': {}, 'animal_pose': {}},
-                         'shrink': {'ap_10k': {}, 'animal_pose': {}}
-                         }
-        # [ap_10k,mixed]
-        ap_10k_map = [[0,0],[1,1],[2,2],[3,3],[4,4],[5,5],[6,6],[7,7],
-                    [8,8],[9,9],[10,10],[11,11],[12,12],[13,13],[14,14],[15,15],
-                    [16,16]]
-        animal_pose_map = [[0,0],[1,1],[2,2],[3,17],[4,18],[5,5],[6,8],[7,11],
-                         [8,14],[9,6],[10,9],[11,12],[12,15],[13,7],[14,10],[15,13],
-                         [16,16],[17,19],[18,20],[19,4]]
-        for lis in ap_10k_map:
-            k, v = lis
-            self.map_info['extend']['ap_10k'][k] = v
-            self.map_info['shrink']['ap_10k'][v] = k
-        for lis in animal_pose_map:
-            k, v = lis
-            self.map_info['extend']['animal_pose'][k] = v
-            self.map_info['shrink']['animal_pose'][v] = k
-
-    # (26,3) -> (17,3) -> (51,)
-    def __call__(self, target):
-        kps = np.array(target['keypoints'].copy()).reshape(-1,3)
-        vis = kps[:,-1].copy()
-        kps = kps[:,:-1].copy()
-        # src dataset -> mix dataset
-        if self.extend_flag:
-            num = 21
-            des_kps = np.zeros((num, 2))
-            des_vis = np.zeros(num)
-            map_info = self.map_info['extend'][target['dataset']]
-            for key in map_info:
-                val = map_info[key]
-                des_kps[val] = kps[key]
-                des_vis[val] = vis[key]
-            target['keypoints'] = des_kps
-            target['visible'] = des_vis
-        # mix dataset -> src dataset
-        else:
-            if target['dataset'] == 'ap_10k':
-                num = 17
-            elif target['dataset'] == 'animal_pose':
-                num = 20
-            elif target['dataset'] == 'tigdog_horse' or target['dataset'] == 'tigdog_tiger':
-                num = 19
-            des_kps = np.zeros((num, 2))
-            des_vis = np.zeros(num)
-            map_info = self.map_info['shrink'][target['dataset']]
-            for key in map_info:
-                val = map_info[key]
-                des_kps[val] = kps[key]
-                des_vis[val] = vis[key]
-            combine_array = np.column_stack((des_kps, des_vis))
-            target['keypoints'] = combine_array.flatten().tolist()
-            # target['visible'] = des_vis.tolist()
-        return target
-
-
-# (17,2)->(26,2)
-# (17)->(26)
+# (17,2)->(24,2)
+# (17)->(24)
 class OriginalLabelFormatTrans(object):
     def __init__(self, extend_flag=True):
         self.extend_flag = extend_flag
@@ -1057,31 +910,6 @@ class TransformMPL(object):
         return [ori_img,aug_img], ori_target
 
 
-class TransformDraw(object):
-    def __init__(self, args, mean, std,n=2,m=10):
-        with open(args.keypoints_path, "r") as f:
-            animal_kps_info = json.load(f)
-        kps_weights = np.array(animal_kps_info["kps_weights"],dtype=np.float32).reshape((args.num_joints,))
-
-        self.ori = Compose([
-            AffineTransform(scale=(1.0, 1.0), rotation=(0, 0), fixed_size=(256,256)),
-            KeypointToHeatMap(heatmap_hw=(64,64), gaussian_sigma=2, keypoints_weights=kps_weights)]
-        )
-        self.aug = Compose([
-            RandWeakAugment(n,m)]
-        )
-        self.normalize = Compose([
-            ToTensor(),
-            Normalize(mean=mean, std=std)])
-
-    def __call__(self, img,target):
-        ori_img,ori_target = self.ori(img,target)
-        aug_img,aug_target = self.aug(ori_img,ori_target)
-        ori_img,ori_target = self.normalize(ori_img,ori_target)
-        aug_img,aug_target = self.normalize(aug_img,aug_target)
-
-        return [ori_img,aug_img], ori_target
-
 
 class TransformConsistency(object):
     def __init__(self, args, mean, std,n=2,m=10):
@@ -1123,64 +951,5 @@ class TransformConsistency(object):
         return [weak_img,strong_img], [weak_target,strong_target]
 
 
-class TransformFixMatch(object):
-    def __init__(self, args, mean, std,n=2,m=10):
-        with open(args.keypoints_path, "r") as f:
-            animal_kps_info = json.load(f)
-        kps_weights = np.array(animal_kps_info["kps_weights"],dtype=np.float32).reshape((args.num_joints,))
-
-        self.ori = Compose([
-            HalfBody(0.3, animal_kps_info["upper_body_ids"], animal_kps_info["lower_body_ids"]),
-            AffineTransform(scale=(0.65, 1.35), rotation=(-45, 45), fixed_size=(256,256)),
-            RandomHorizontalFlip(0.5, animal_kps_info["flip_pairs"]),
-            KeypointToHeatMap(heatmap_hw=(64,64), gaussian_sigma=2, keypoints_weights=kps_weights)]
-        )
-        self.aug = Compose([
-            RandWeakAugmentFixMatch(n,m)]
-        )
-        self.normalize = Compose([
-            ToTensor(),
-            Normalize(mean=mean, std=std)])
-
-    def __call__(self, img,target):
-        ori_img,ori_target = self.ori(img,target)
-        aug_img,aug_target = self.aug(ori_img,ori_target)
-        ori_img,ori_target = self.normalize(ori_img,ori_target)
-        aug_img,aug_target = self.normalize(aug_img,aug_target)
-
-        return [ori_img,aug_img], ori_target
 
 
-if __name__ == '__main__':
-    # ap_10k_map = [[0, 0], [1, 1], [2, 4], [3, 8], [4, 25], [5, 11], [6, 15], [7, 21],
-    #               [8, 12], [9, 16], [10, 22], [11, 13], [12, 17], [13, 23], [14, 14], [15, 18], [16, 24]]
-    # animal_pose_map = [[0, 0], [1, 1], [2, 4], [3, 2], [4, 3], [5, 11], [6, 12], [7, 13],
-    #                    [8, 14], [9, 15], [10, 16], [11, 17], [12, 18], [13, 21], [14, 22], [15, 23],
-    #                    [16, 24], [17, 6], [18, 7], [19, 25]]
-    # tigdog_map = [[0, 0], [1, 1], [2, 5], [3, 21], [4, 22], [5, 23], [6, 24], [7, 25],
-    #               [8, 15], [9, 16], [10, 17], [11, 18], [12, 9], [13, 10], [14, 11], [15, 12],
-    #               [16, 13], [17, 14], [18, 8]]
-    # with open('./info/ap_10k_keypoints_format.json','r') as f:
-    #     ap_10k_data = json.load(f)
-    # with open('./info/animal_pose_keypoints_format.json','r') as f:
-    #     animal_pose_data = json.load(f)
-    # with open('./info/tigdog_keypoints_format.json','r') as f:
-    #     tigdog_data = json.load(f)
-    # with open('./info/keypoints_definition.json','r') as f:
-    #     mix_data = json.load(f)
-    #
-    # for k,v in ap_10k_map:
-    #     key_1 = ap_10k_data['keypoints'][k]
-    #     key_2 = mix_data['keypoints'][v]
-    #     print(f"{key_1} : {key_2}")
-    # for k,v in animal_pose_map:
-    #     key_1 = animal_pose_data['keypoints'][k]
-    #     key_2 = mix_data['keypoints'][v]
-    #     print(f"{key_1} : {key_2}")
-    # for k,v in tigdog_map:
-    #     key_1 = tigdog_data['keypoints'][k]
-    #     key_2 = mix_data['keypoints'][v]
-    #     print(f"{key_1} : {key_2}")
-
-    func = LabelFormatTrans(dataset='ap_10k', extend_flag=True)
-    print('pause')
