@@ -120,7 +120,7 @@ Tips: These datasets are modified from  “25 images per species” setting of S
 
 ## Inference Demo
 
-In `inference_example.py`, just run all or you can change the image or model file .
+In `inference_example.py`/`inference_example.ipynb`(jupyter), just run all or you can change the image or model file .
 
 ```python
 img_path = "test.jpg"
