@@ -110,7 +110,7 @@ Tips: These datasets are modified from  “25 images per species” setting of S
 
 | Model | mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
 | :---: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| Ours  | 57.9 | 68.31 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/pretrained_25_5.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_25_5_ips_model.pth) |
+| Ours  | 57.9 | 68.31 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/pretrained_25_5.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_25_5_ips_ap10k.pth) |
 
 ### Train on 10% combined AP-10k and AnimalPose
 
@@ -257,7 +257,6 @@ If you have any questions, please contact the authors:
 
 Dan Zeng: zengd@sustech.edu.cn or danzeng1990@gmail.com
 Yu Zhu: 12332483@mail.sustech.edu.cn
-
 
 
 
