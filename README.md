@@ -200,7 +200,7 @@ python ours_ap_10k_animal_pose.py \
     --amp
 ```
 
-For AP-10k + AnimalPose + TigDog:
+For 10% AP-10k + AnimalPose + TigDog:
 
 ```shell
 python ours_ap10k_animalpose_tigdog.py \
