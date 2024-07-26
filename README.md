@@ -112,11 +112,19 @@ Tips: These datasets are modified from  “25 images per species” setting of S
 | :---: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
 | Ours  | 57.9 | 68.31 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/pretrained_25_5.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_25_5_ips_ap10k.pth) |
 
-### Train on 10% combined AP-10k and AnimalPose
+### Train on combined AP-10k and AnimalPose
 
-| Model | mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
-| :---: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
-| Ours  | 57.5 | 71.28 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/ap_10k_animal_pose_mix_SL_0.1_hrnet.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_0.1_ap10k_animalpose.pth) |
+| Model | Random Sample Ratio | mAP  |  PCK  |                      Pretrained Weights                      |                           Download                           |
+| :---: | :-----------------: | :--: | :---: | :----------------------------------------------------------: | :----------------------------------------------------------: |
+| Ours  |         5%          | 48.6 | 65.3  | [weights](https://github.com/yzrs/FreeNet/releases/download/model/ap_10k_animal_pose_mix_SL_0.05_hrnet.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/model/ours_0.05_ap10k_animalpose.pth) |
+| Ours  |         10%         | 57.5 | 71.28 | [weights](https://github.com/yzrs/FreeNet/releases/download/Models/ap_10k_animal_pose_mix_SL_0.1_hrnet.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/Models/ours_0.1_ap10k_animalpose.pth) |
+| Ours  |         20%         | 63.4 | 75.4  | [weights](https://github.com/yzrs/FreeNet/releases/download/model/ap_10k_animal_pose_mix_SL_0.2_hrnet.pth) | [model](https://github.com/yzrs/FreeNet/releases/download/model/ours_0.2_ap10k_animalpose.pth) |
+
+
+
+Tips:
+
+Some other model weights like random-10%-ap10k used to draw exmaples  in the first column of Fig6(a) are also provided [here](https://github.com/yzrs/FreeNet/releases/tag/model).
 
 ## Inference Demo
 
