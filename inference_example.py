@@ -1,6 +1,3 @@
-import random
-import json
-
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,15 +9,7 @@ from models.hrnet import HighResolutionNet
 import torchvision.transforms as transforms
 
 
-def set_seed(seed):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-
-
 def inference():
-    set_seed(2)
     img_path = "test.jpg"
     # Ls / + Lu / +Lf
     weights_path = "saved_weights/ls_lu_lf.pth"
