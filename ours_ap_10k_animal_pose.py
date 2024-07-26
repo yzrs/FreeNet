@@ -186,8 +186,7 @@ if __name__ == "__main__":
     parser.add_argument('--data-root', default='../dataset', type=str, help='data path')
     parser.add_argument('--pretrained-model-path', default='./pretrained_weights',
                         type=str, help='pretrained weights base path')
-    parser.add_argument('--pretrained-weights-name', default='ap_10k_animal_pose_mix_SL_0.1_hrnet.pth',
-                        type=str, help='pretrained weights name')
+    parser.add_argument('--pretrained-weights-name', default=None,type=str, help='pretrained weights name')
     parser.add_argument('--sample-ratio', default=0.1, type=float, help='dataset sample ratio')
 
     parser.add_argument('--output-dir', default='./experiment',type=str, help='output dir depends on the time')
@@ -231,6 +230,8 @@ if __name__ == "__main__":
     parser.add_argument('--cfg',default='outer_tools/experiments/ap10k/hrnet/w32_256x192_adam_lr1e-3_ap10k_animalpose.yaml',
                         help='experiment configure file name',type=str)
     args = parser.parse_args()
+
+    args.pretrained_weights_name = 'ap_10k_animal_pose_mix_SL_{}_hrnet.pth'.format(args.sample_ratio)
 
     now = datetime.datetime.now()
     now_time = now.strftime("%Y-%m_%d_%H-%M-%S")
